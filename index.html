@@ -1,838 +1,1425 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LinkVault Manager</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style>
-        /* MI File Manager / Material Design Vibes */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f3f4f6; /* gray-100 */
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-
-        /* Folder Icon Gradient */
-        .folder-icon {
-            background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        /* Youtube specific styling */
-        .yt-thumbnail-container {
-            position: relative;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
-            overflow: hidden;
-            background: #000;
-            border-radius: 0.5rem;
-        }
-        .yt-thumbnail-container img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Grid Layout */
-        .grid-layout {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Mobile friendly small grid */
-            gap: 1rem;
-        }
-        
-        @media (min-width: 640px) {
-            .grid-layout {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            }
-        }
-
-        /* Text truncation */
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 3px solid #3498db;
-            width: 20px;
-            height: 20px;
-            -webkit-animation: spin 1s linear infinite; /* Safari */
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-    <!-- PWA Manifest Placeholder (Would normally be an external file) -->
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJtYW1lIjoiTGlua1ZhdWx0IiwiYmFja2dyb3VuZF9jb2xvciI6IiNmZmZmZmYiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsInRoZW1lX2NvbG9yIjoiIzNiODJmNiIsImljb25zIjpbeyJzcmMiOiJodHRwczovL3ZpYS5wbGFjZWhvbGRlci5jb20vMTkyIiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0=" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mani's Bookmark Vault</title>
+  <meta name="description" content="Personal bookmark manager with clipboard capture, GitHub sync, share target, and offline-ready storage.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f172a'/><path d='M25 25h50v50L50 60 25 75Z' fill='%23ffca3a'/></svg>">
+  <meta name="theme-color" content="#ffca3a">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+    body {
+      font-family: "Inter", "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #fff7d6 0%, #ffe7c6 35%, #f7f0ff 70%, #dbe8ff 100%);
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+    body[data-theme="midnight"] {
+      background: radial-gradient(circle at top, #090915 0%, #111327 45%, #0b132b 100%);
+      color: #f5f7ff;
+    }
+    body[data-theme="neon"] {
+      background: radial-gradient(circle at top, #030014 0%, #10002b 40%, #240046 70%, #36005c 100%);
+      color: #f3f6ff;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+    }
+    body[data-theme="glass"] {
+      background: linear-gradient(135deg, #e8f0ff 0%, #fef6ff 35%, #e9fffb 65%, #fefde1 100%);
+      color: #0f172a;
+    }
+    body.modal-open {
+      overflow: hidden;
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
+    }
+    body[data-theme="midnight"] .glass-panel {
+      background: rgba(7, 10, 23, 0.82);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.55);
+    }
+    body[data-theme="neon"] .glass-panel {
+      background: rgba(8, 9, 26, 0.78);
+      border-color: rgba(80, 255, 218, 0.4);
+      box-shadow: 0 30px 60px rgba(80, 255, 218, 0.2);
+    }
+    body[data-theme="glass"] .glass-panel {
+      background: rgba(255, 255, 255, 0.55);
+      border-color: rgba(15, 23, 42, 0.08);
+      box-shadow: 0 30px 70px rgba(15, 23, 42, 0.08);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      padding: 0.2rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      color: #111;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    body[data-theme="midnight"] .badge,
+    body[data-theme="neon"] .badge {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f5f5f5;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .platform-chip {
+      cursor: pointer;
+      border-radius: 18px;
+      padding: 0.55rem 0.95rem;
+      border: 1px solid transparent;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+      background: rgba(255, 255, 255, 0.7);
+    }
+    .platform-chip.active {
+      border-color: rgba(15, 23, 42, 0.2);
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-2px);
+    }
+    body[data-theme="midnight"] .platform-chip,
+    body[data-theme="neon"] .platform-chip {
+      background: rgba(255, 255, 255, 0.05);
+      color: #f5f5f5;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .bookmark-card {
+      border-radius: 20px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.92);
+    }
+    body[data-theme="midnight"] .bookmark-card,
+    body[data-theme="neon"] .bookmark-card {
+      border-color: rgba(255, 255, 255, 0.06);
+      background: rgba(9, 13, 29, 0.95);
+    }
+    .bookmark-thumb {
+      width: 100%;
+      border-radius: 18px;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      background: #e8ecf5;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    body[data-theme="midnight"] .bookmark-thumb,
+    body[data-theme="neon"] .bookmark-thumb {
+      background: #1f2940;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .section-toggle {
+      border-radius: 999px;
+      padding: 0.4rem 1.2rem;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      background: rgba(255, 255, 255, 0.8);
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .toggle-icon {
+      width: 1.6rem;
+      height: 1.6rem;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+    .collapsible-body {
+      margin-top: 1.5rem;
+    }
+    [data-collapsible].is-collapsed .collapsible-body {
+      display: none;
+    }
+    .library-tabs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .library-tabs button {
+      flex: 1;
+      min-width: 140px;
+      border-radius: 999px;
+      padding: 0.5rem 1rem;
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px solid transparent;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: background 0.2s ease;
+    }
+    .library-tabs button.active {
+      background: #0f172a;
+      color: #fff;
+    }
+    body[data-theme="midnight"] .library-tabs button,
+    body[data-theme="neon"] .library-tabs button {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5f5;
+    }
+    body[data-theme="midnight"] .library-tabs button.active,
+    body[data-theme="neon"] .library-tabs button.active {
+      background: #ffca3a;
+      color: #0f172a;
+    }
+    .library-panel.hidden {
+      display: none;
+    }
+    .snippet-card,
+    .image-card {
+      border-radius: 18px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.92);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    body[data-theme="midnight"] .snippet-card,
+    body[data-theme="midnight"] .image-card,
+    body[data-theme="neon"] .snippet-card,
+    body[data-theme="neon"] .image-card {
+      border-color: rgba(255, 255, 255, 0.06);
+      background: rgba(9, 13, 29, 0.95);
+    }
+    .image-card img {
+      border-radius: 14px;
+      width: 100%;
+      object-fit: cover;
+      max-height: 320px;
+      background: #e4e7ee;
+    }
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(15, 23, 42, 0.25);
+      border-radius: 999px;
+    }
+    body[data-theme="midnight"] ::-webkit-scrollbar-thumb,
+    body[data-theme="neon"] ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    .clipboard-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 50;
+    }
+    .clipboard-modal.hidden {
+      display: none;
+    }
+    .clipboard-card {
+      max-width: 480px;
+      width: 100%;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1.5rem;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 30px 60px rgba(2, 6, 23, 0.35);
+    }
+    body[data-theme="midnight"] .clipboard-card,
+    body[data-theme="neon"] .clipboard-card {
+      background: rgba(9, 13, 29, 0.95);
+      color: #f5f7ff;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    @media (max-width: 640px) {
+      header .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
 </head>
-<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
-
-    <!-- Header -->
-    <header class="bg-white shadow-sm z-10 shrink-0">
-        <div class="flex items-center justify-between px-4 py-3">
-            <div class="flex items-center gap-3">
-                <button id="btn-back" class="p-2 rounded-full hover:bg-gray-100 hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-gray-600">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                    </svg>
-                </button>
-                <h1 class="text-xl font-bold text-gray-700 tracking-tight" id="header-title">LinkVault</h1>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="app.openSearch()" class="p-2 rounded-full hover:bg-gray-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-gray-600">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                    </svg>
-                </button>
-                <button onclick="app.toggleMenu()" class="p-2 rounded-full hover:bg-gray-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-gray-600">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                    </svg>
-                </button>
-            </div>
+<body data-theme="sunrise">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6" id="appShell">
+    <header class="glass-panel rounded-3xl p-6 space-y-4">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p class="badge">Clipboard smart-capture · Local JSON</p>
+          <h1 class="text-3xl sm:text-4xl font-semibold text-slate-900 dark:text-white mt-2">Mani's Bookmark Vault</h1>
+          <p class="text-slate-700 dark:text-slate-200 max-w-2xl mt-2">Save anything you copy or share — links, notes, and reference images — categorize it instantly, and sync privately. Full thumbnails, folder rails, and dedicated tabs keep every medium neat.</p>
         </div>
-        
-        <!-- Breadcrumbs -->
-        <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 overflow-x-auto whitespace-nowrap text-sm text-gray-500 flex items-center" id="breadcrumbs">
-            <span class="text-blue-500 font-medium">Home</span>
+        <div class="actions flex flex-wrap items-center gap-3">
+          <button id="themeToggle" class="px-4 py-2 rounded-2xl border border-white/40 bg-white/70 text-slate-900 font-medium shadow-sm hover:translate-y-[-1px] transition">
+            Theme: Sunrise
+          </button>
+          <button id="installPwaBtn" class="px-4 py-2 rounded-2xl border border-amber-200 bg-amber-100 text-amber-900 font-medium shadow-sm disabled:opacity-50" disabled>
+            Install App
+          </button>
         </div>
+      </div>
+      <div class="flex flex-wrap gap-3 text-xs uppercase tracking-wide">
+        <span class="badge">PWA Ready</span>
+        <span class="badge">Neon & Glass themes</span>
+        <span class="badge">GitHub Sync</span>
+        <span class="badge">Clipboard intake</span>
+      </div>
+      <div class="toggle-controls flex flex-wrap gap-3">
+        <button id="expandAll" type="button" class="px-4 py-2 rounded-2xl border border-slate-200 bg-white/80 text-sm font-medium">Expand all</button>
+        <button id="collapseAll" type="button" class="px-4 py-2 rounded-2xl border border-slate-200 bg-white/80 text-sm font-medium">Collapse all</button>
+      </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto p-4 relative" id="main-container">
-        <!-- Loading State -->
-        <div id="loading-spinner" class="flex justify-center items-center h-full hidden">
-            <div class="loader"></div>
+    <section class="glass-panel rounded-3xl p-5" id="platformSection" data-collapsible>
+      <div class="section-header">
+        <div>
+          <h2 class="text-xl font-semibold">Platform rails</h2>
+          <p class="text-sm text-slate-500">Tap a chip to focus on a source. Counts adapt instantly.</p>
         </div>
-
-        <!-- Empty State -->
-        <div id="empty-state" class="hidden flex flex-col items-center justify-center h-full text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mb-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z" />
-            </svg>
-            <p>Folder is empty</p>
+        <div class="flex gap-3 items-center">
+          <button id="clearFilters" class="text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white">Reset filters</button>
+          <button type="button" class="section-toggle" data-toggle>
+            <span class="toggle-icon">+</span>
+            <span>Expand</span>
+          </button>
         </div>
+      </div>
+      <div class="collapsible-body">
+        <div id="platformRail" class="flex flex-wrap gap-3"></div>
+      </div>
+    </section>
 
-        <!-- Grid Container -->
-        <div id="content-grid" class="grid-layout pb-20">
-            <!-- Items injected via JS -->
+    <section class="grid gap-6 lg:grid-cols-3">
+      <section id="addBookmarkSection" class="glass-panel rounded-3xl p-5 lg:col-span-2" data-collapsible data-default-open>
+        <div class="section-header">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-slate-500">Auto-fetch thumbnails & metadata</p>
+            <h2 class="text-xl font-semibold">Add bookmark</h2>
+          </div>
+          <button type="button" class="section-toggle" data-toggle>
+            <span class="toggle-icon">−</span>
+            <span>Collapse</span>
+          </button>
         </div>
-    </main>
+        <div class="collapsible-body">
+          <form id="bookmarkForm" class="space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200">Platform
+                <select name="platform" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3 text-slate-900" required>
+                  <option>YouTube</option>
+                  <option>Article</option>
+                  <option>Podcast</option>
+                  <option>Tweet</option>
+                  <option>Custom</option>
+                </select>
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200">Folder
+                <input name="folder" list="folderOptions" placeholder="e.g. Inspiration" value="AI" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3" required>
+                <datalist id="folderOptions"></datalist>
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200 sm:col-span-2">URL
+                <input name="url" id="urlInput" type="url" placeholder="https://" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3">
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200">Title (optional override)
+                <input name="title" placeholder="Auto-detected if empty" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3">
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200">Tags
+                <input name="tags" placeholder="comma,separated" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3">
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200 sm:col-span-2">Notes
+                <textarea name="notes" rows="2" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3" placeholder="Context, highlights, tasks..."></textarea>
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200">Text title
+                <input name="textTitle" placeholder="e.g. Launch checklist" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3">
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200">Image title
+                <input name="imageTitle" placeholder="e.g. Mood board" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3">
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200 sm:col-span-2">Text snippet (stored separately)
+                <textarea name="textSnippet" rows="2" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3" placeholder="Paste transcript, summary, or raw text."></textarea>
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200 sm:col-span-2">Reference image upload
+                <input name="image" type="file" accept="image/*" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3">
+              </label>
+              <label class="text-sm font-medium text-slate-600 dark:text-slate-200 sm:col-span-2">Reference image URL (fetches from other websites)
+                <input name="imageUrl" type="url" placeholder="https://example.com/shot.png" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3">
+              </label>
+            </div>
+            <button type="submit" class="w-full rounded-2xl bg-slate-900 text-white py-3 font-semibold hover:bg-slate-800 transition">
+              Save entry
+            </button>
+            <p class="text-xs text-slate-500">Paste a YouTube link and the app fetches its title + thumbnail. Clipboard capture can pre-fill these fields automatically.</p>
+          </form>
+        </div>
+      </section>
 
-    <!-- Floating Action Button (FAB) -->
-    <div class="absolute bottom-6 right-6 z-20">
-        <button onclick="app.showAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-transform active:scale-90 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
+      <div class="space-y-4">
+        <section id="quickActionsSection" class="glass-panel rounded-3xl p-5" data-collapsible>
+          <div class="section-header">
+            <h3 class="font-semibold">Quick actions</h3>
+            <button type="button" class="section-toggle" data-toggle>
+              <span class="toggle-icon">+</span>
+              <span>Expand</span>
+            </button>
+          </div>
+          <div class="collapsible-body space-y-3">
+            <div class="flex flex-wrap gap-3">
+              <button id="exportBtn" class="flex-1 rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium">Export JSON</button>
+              <label class="flex-1 rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-center cursor-pointer">Import JSON
+                <input id="importInput" type="file" accept="application/json" class="hidden">
+              </label>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-200">Use import/export when migrating or sharing your vault offline.</p>
+            <div class="rounded-2xl border border-dashed border-slate-300 p-3 text-xs text-slate-500">
+              <p class="font-semibold text-slate-700 dark:text-white">Share Target ready</p>
+              <p>Send links, text, or images from Android share sheets. Incoming <code>?sharedUrl=</code> / <code>?sharedText=</code> parameters auto-populate the form.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="foldersSection" class="glass-panel rounded-3xl p-5" data-collapsible>
+          <div class="section-header">
+            <div>
+              <h3 class="font-semibold">Folders</h3>
+              <span id="folderCount" class="text-xs text-slate-500">0 folders</span>
+            </div>
+            <button type="button" class="section-toggle" data-toggle>
+              <span class="toggle-icon">+</span>
+              <span>Expand</span>
+            </button>
+          </div>
+          <div class="collapsible-body">
+            <div id="folderList" class="flex flex-wrap gap-2"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="glass-panel rounded-3xl p-5" id="librarySection" data-collapsible data-default-open>
+      <div class="section-header">
+        <div>
+          <h2 class="text-xl font-semibold">Library</h2>
+          <p class="text-sm text-slate-500">Search works across bookmarks, snippets, and images simultaneously.</p>
+        </div>
+        <button type="button" class="section-toggle" data-toggle>
+          <span class="toggle-icon">−</span>
+          <span>Collapse</span>
         </button>
-    </div>
-
-    <!-- Slide-out Menu (Settings) -->
-    <div id="menu-drawer" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity" onclick="app.toggleMenu()">
-        <div class="absolute right-0 top-0 bottom-0 w-64 bg-white shadow-2xl transform transition-transform translate-x-full p-4 flex flex-col" id="menu-content" onclick="event.stopPropagation()">
-            <h2 class="text-lg font-bold mb-6 text-gray-800">Settings</h2>
-            
-            <div class="space-y-2 flex-1">
-                <button onclick="app.exportData()" class="w-full text-left px-4 py-3 rounded hover:bg-gray-100 flex items-center gap-3 text-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                    </svg>
-                    Export Backup (JSON)
-                </button>
-                <button onclick="document.getElementById('import-file').click()" class="w-full text-left px-4 py-3 rounded hover:bg-gray-100 flex items-center gap-3 text-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    Import Backup
-                </button>
-                <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.importData(this)">
-                
-                <button onclick="app.showInfo()" class="w-full text-left px-4 py-3 rounded hover:bg-gray-100 flex items-center gap-3 text-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                    </svg>
-                    How to Share/Host
-                </button>
-
-                <div class="mt-6 border-t pt-4">
-                    <p class="text-xs text-gray-500 mb-2">Database Usage:</p>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 1%" id="storage-bar"></div>
-                    </div>
-                    <p class="text-xs text-gray-400 mt-1" id="item-count">0 Items</p>
-                </div>
-            </div>
-            <button onclick="app.toggleMenu()" class="mt-4 w-full bg-gray-200 text-gray-800 py-2 rounded">Close</button>
+      </div>
+      <div class="collapsible-body space-y-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-slate-500">Type anything to filter every tab.</p>
+          <input id="searchInput" type="search" placeholder="Search links, notes, or image titles" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 w-full sm:w-72">
         </div>
-    </div>
-
-    <!-- Add Item Modal -->
-    <div id="add-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center">
-        <div class="bg-white w-full sm:w-96 sm:rounded-xl rounded-t-xl p-6 shadow-xl animate-slide-up">
-            <h3 class="text-lg font-bold mb-4">Add New Item</h3>
-            
-            <!-- Tabs -->
-            <div class="flex border-b mb-4">
-                <button class="flex-1 py-2 text-blue-600 border-b-2 border-blue-600 font-medium" id="tab-link" onclick="app.switchTab('link')">Link</button>
-                <button class="flex-1 py-2 text-gray-500" id="tab-folder" onclick="app.switchTab('folder')">Folder</button>
-            </div>
-
-            <div id="form-link" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">URL</label>
-                    <input type="url" id="input-url" class="w-full border rounded-lg p-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://youtube.com/...">
-                </div>
-                <div id="url-preview" class="hidden text-xs text-gray-500 italic">Fetching info...</div>
-            </div>
-
-            <div id="form-folder" class="space-y-4 hidden">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Folder Name</label>
-                    <input type="text" id="input-folder-name" class="w-full border rounded-lg p-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g., Music, Tutorials">
-                </div>
-            </div>
-
-            <div class="mt-6 flex gap-3">
-                <button onclick="app.closeAddModal()" class="flex-1 py-2 bg-gray-100 rounded-lg text-gray-700 font-medium">Cancel</button>
-                <button onclick="app.saveItem()" class="flex-1 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">Save</button>
-            </div>
+        <div class="library-tabs" id="libraryTabs">
+          <button type="button" class="active" data-library-tab="bookmarks">Bookmarks</button>
+          <button type="button" data-library-tab="snippets">Text snippets</button>
+          <button type="button" data-library-tab="images">Reference images</button>
         </div>
-    </div>
-
-    <!-- Info Modal -->
-    <div id="info-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl font-bold mb-4 text-gray-800">Setup Guide</h3>
-            
-            <div class="space-y-4 text-sm text-gray-600">
-                
-                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                    <h4 class="font-bold text-blue-800 mb-1">1. How to Host (GitHub Pages)</h4>
-                    <ol class="list-decimal ml-4 space-y-1">
-                        <li>Create a GitHub account & new repository (e.g., "mylinks").</li>
-                        <li>Upload this <code>index.html</code> file to the repository.</li>
-                        <li>Go to Repo Settings -> Pages -> Select "main" branch -> Save.</li>
-                        <li>Wait 1 min. You will get a URL (e.g., <code>user.github.io/mylinks</code>).</li>
-                    </ol>
-                </div>
-
-                <div class="bg-green-50 p-3 rounded-lg border border-green-100">
-                    <h4 class="font-bold text-green-800 mb-1">2. Enable "Share to App" (PWA)</h4>
-                    <p class="mb-2">To see this app in Android's Share menu, you need a <code>manifest.json</code> file in the same folder on GitHub.</p>
-                    <button onclick="app.downloadManifest()" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold shadow-sm hover:bg-green-700">Download manifest.json</button>
-                    <p class="mt-2 text-xs">Upload this file next to index.html. Then on your phone, open the site -> Options -> "Add to Home Screen".</p>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-gray-800">3. Data & Backup</h4>
-                    <p>Data lives in your browser cache. It is <strong>not synced</strong> automatically.</p>
-                    <ul class="list-disc ml-4 mt-1 space-y-1">
-                        <li><strong>Transfer:</strong> Use Menu -> Export Backup to save a JSON file. Send it to your new device and Import.</li>
-                        <li><strong>Reset:</strong> Clearing browser cache will delete your links unless backed up!</li>
-                    </ul>
-                </div>
-
-            </div>
-            <button onclick="app.closeInfo()" class="mt-6 w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-gray-900">Close Guide</button>
+        <div class="library-panel" data-tab-panel="bookmarks">
+          <div id="bookmarkGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
+          <p id="emptyState" class="text-center text-sm text-slate-500 hidden">Start saving! Your bookmarks will appear here.</p>
         </div>
+        <div class="library-panel hidden" data-tab-panel="snippets">
+          <div id="snippetList" class="space-y-3"></div>
+          <p id="snippetEmpty" class="text-center text-sm text-slate-500">No text snippets captured yet.</p>
+        </div>
+        <div class="library-panel hidden" data-tab-panel="images">
+          <div id="imageGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
+          <p id="imageEmpty" class="text-center text-sm text-slate-500">No reference images stored yet.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="syncHub" class="glass-panel rounded-3xl p-5" data-collapsible>
+      <div class="section-header">
+        <div>
+          <h2 class="text-xl font-semibold">GitHub Sync & Private vaults</h2>
+          <p class="text-sm text-slate-500">Sync your JSON archive to GitHub (supports private repositories with a token that has <code>repo</code> scope).</p>
+        </div>
+        <button type="button" class="section-toggle" data-toggle>
+          <span class="toggle-icon">+</span>
+          <span>Expand</span>
+        </button>
+      </div>
+      <div class="collapsible-body space-y-4">
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <input id="githubOwner" placeholder="Owner / Org" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
+          <input id="githubRepo" placeholder="Repository" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
+          <input id="githubPath" placeholder="Path e.g. data/bookmarks.json" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
+          <input id="githubToken" type="password" placeholder="Personal Access Token" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button id="pullGithub" class="flex-1 rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 font-medium">Pull from GitHub</button>
+          <button id="pushGithub" class="flex-1 rounded-2xl bg-slate-900 text-white px-4 py-2 font-semibold">Push to GitHub</button>
+        </div>
+        <p id="githubStatus" class="text-sm text-slate-500">Status: idle</p>
+      </div>
+    </section>
+
+    <section class="glass-panel rounded-3xl p-5 space-y-6" data-collapsible>
+      <div class="section-header">
+        <h2 class="text-xl font-semibold">Deployment, Sync & Cross-app sharing guide</h2>
+        <button type="button" class="section-toggle" data-toggle>
+          <span class="toggle-icon">+</span>
+          <span>Expand</span>
+        </button>
+      </div>
+      <div class="collapsible-body space-y-6 text-sm text-slate-600 dark:text-slate-200">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="rounded-2xl border border-slate-200/60 p-4 space-y-2">
+            <h3 class="font-semibold">GitHub Pages deployment — step by step</h3>
+            <ol class="list-decimal list-inside space-y-1">
+              <li><strong>Repo setup:</strong> create a new GitHub repo (public or private) and add this <code>index.html</code>. Commit + push.</li>
+              <li><strong>Enable Pages:</strong> Settings → Pages → Build & deployment → select <em>Deploy from branch</em>, pick <code>main</code>, folder <code>/</code>, and hit Save.</li>
+              <li><strong>Wait & verify:</strong> GitHub builds in ~1 min. Visit the URL displayed in the Pages panel to ensure the PWA loads.</li>
+              <li><strong>Optional assets:</strong> create <code>data/bookmarks.json</code> (exported from the app) so first-time visitors load pre-filled data.</li>
+              <li><strong>Install prompt:</strong> once opened over HTTPS, Chrome/Edge/Firefox will offer "Install app" in the address bar.</li>
+            </ol>
+          </div>
+          <div class="rounded-2xl border border-slate-200/60 p-4 space-y-2">
+            <h3 class="font-semibold">GitHub sync — push/pull workflow</h3>
+            <ol class="list-decimal list-inside space-y-1">
+              <li>Generate a classic Personal Access Token with <code>repo</code> scope (Settings → Developer settings → Personal access tokens).</li>
+              <li>Fill Owner, Repo, Path (e.g. <code>vault/bookmarks.json</code>) and paste the token into the Sync card.</li>
+              <li><strong>Push</strong>: serializes current localStorage data, Base64 encodes it, and updates/creates the GitHub file (keeps SHA so history is preserved).</li>
+              <li><strong>Pull</strong>: downloads the JSON from GitHub, replaces your local vault, and re-renders. Always export a backup first.</li>
+              <li>For private repos, make sure the token user has write access. Revoke tokens immediately if the device is lost.</li>
+            </ol>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200/60 p-4 space-y-2">
+          <h3 class="font-semibold">Share anything from other apps</h3>
+          <p>The manifest's <code>share_target</code> + clipboard capture means Mani's Vault acts like a system share sheet target:</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li><strong>Share a link</strong> from Chrome/YouTube → choose "Mani's Bookmark Vault" → URL + title auto-fill and thumbnails refresh.</li>
+            <li><strong>Share text</strong> from Kindle/Notion → text arrives inside the snippet field, with the shared title pre-filled so you can rename quickly.</li>
+            <li><strong>Share an image</strong> (or image URL) from Pinterest/Dribbble → attach via upload or paste the copied image URL; image titles keep your mood boards organized.</li>
+            <li><strong>Clipboard helper</strong> runs when the app opens, asking if the copied content should become a bookmark, text note, or reference image.</li>
+          </ul>
+          <p class="text-xs text-slate-500">Tip: add the deployed URL as a shortcut on Android/iOS home screens for near-native capture speed.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="glass-panel rounded-3xl p-5" data-collapsible>
+      <div class="section-header">
+        <h2 class="text-xl font-semibold">Suggestions for the next upgrade</h2>
+        <button type="button" class="section-toggle" data-toggle>
+          <span class="toggle-icon">+</span>
+          <span>Expand</span>
+        </button>
+      </div>
+      <div class="collapsible-body text-sm text-slate-600 dark:text-slate-200">
+        <ul class="list-disc list-inside space-y-1">
+          <li>Hook up AI summaries: send snippets to GPT/Claude and store the responses alongside originals.</li>
+          <li>Add reminder dates so each bookmark can resurface via push notification.</li>
+          <li>Enable multi-select actions (bulk delete, bulk export of specific folders).</li>
+          <li>Tag collaborators and invite them through shared GitHub branches.</li>
+          <li>Render timeline analytics (what you saved per week or per platform).</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <div id="clipboardModal" class="clipboard-modal hidden">
+    <div class="clipboard-card space-y-4">
+      <div>
+        <h3 class="text-lg font-semibold">Clipboard content detected</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-300">Choose how you want to store it.</p>
+      </div>
+      <pre id="clipboardPreview" class="max-h-40 overflow-y-auto bg-slate-900/5 dark:bg-white/5 rounded-2xl p-3 text-xs whitespace-pre-wrap"></pre>
+      <div class="grid gap-2 sm:grid-cols-3">
+        <button type="button" data-clip-action="bookmark" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium">Save as Bookmark</button>
+        <button type="button" data-clip-action="text" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium">Save as Text</button>
+        <button type="button" data-clip-action="image" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium">Save as Image</button>
+      </div>
+      <button type="button" data-clip-dismiss class="w-full rounded-2xl border border-slate-200 bg-white/60 px-4 py-2 text-sm">Dismiss</button>
     </div>
+  </div>
 
-    <script>
-        /**
-         * DATABASE LAYER (IndexedDB)
-         * Handles storage of potentially lakhs of records.
-         */
-        const DB_NAME = 'LinkVaultDB';
-        const DB_VERSION = 1;
-        const STORE_NAME = 'items';
+  <script>
+    const STORAGE_KEY = 'universalBookmarkVault';
+    const PLATFORM_PRESETS = ['All', 'YouTube', 'Article', 'Podcast', 'Tweet', 'Custom'];
+    const THEME_SEQUENCE = ['sunrise', 'midnight', 'neon', 'glass'];
+    const state = {
+      theme: 'sunrise',
+      bookmarks: [],
+      filters: { folder: 'All', platform: 'All', search: '' },
+      github: { owner: '', repo: '', path: 'data/bookmarks.json', token: '' },
+      activeLibraryTab: 'bookmarks'
+    };
+    let deferredPrompt = null;
+    let collapsibleSections = [];
+    let libraryTabButtons = [];
+    let libraryPanels = [];
+    let clipboardBuffer = '';
 
-        const dbService = {
-            db: null,
-            
-            async connect() {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(DB_NAME, DB_VERSION);
-                    
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-                        if (!db.objectStoreNames.contains(STORE_NAME)) {
-                            const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                            store.createIndex('parentId', 'parentId', { unique: false });
-                            store.createIndex('type', 'type', { unique: false });
-                            store.createIndex('createdAt', 'createdAt', { unique: false });
-                        }
-                    };
+    const dom = {
+      body: document.body,
+      platformRail: document.getElementById('platformRail'),
+      folderList: document.getElementById('folderList'),
+      folderCount: document.getElementById('folderCount'),
+      form: document.getElementById('bookmarkForm'),
+      bookmarkGrid: document.getElementById('bookmarkGrid'),
+      emptyState: document.getElementById('emptyState'),
+      searchInput: document.getElementById('searchInput'),
+      themeToggle: document.getElementById('themeToggle'),
+      installBtn: document.getElementById('installPwaBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      importInput: document.getElementById('importInput'),
+      folderOptions: document.getElementById('folderOptions'),
+      clearFilters: document.getElementById('clearFilters'),
+      githubOwner: document.getElementById('githubOwner'),
+      githubRepo: document.getElementById('githubRepo'),
+      githubPath: document.getElementById('githubPath'),
+      githubToken: document.getElementById('githubToken'),
+      pullGithub: document.getElementById('pullGithub'),
+      pushGithub: document.getElementById('pushGithub'),
+      githubStatus: document.getElementById('githubStatus'),
+      urlInput: document.getElementById('urlInput'),
+      expandAll: document.getElementById('expandAll'),
+      collapseAll: document.getElementById('collapseAll'),
+      snippetList: document.getElementById('snippetList'),
+      snippetEmpty: document.getElementById('snippetEmpty'),
+      imageGrid: document.getElementById('imageGrid'),
+      imageEmpty: document.getElementById('imageEmpty'),
+      folderField: document.querySelector('input[name="folder"]'),
+      clipboardModal: document.getElementById('clipboardModal'),
+      clipboardPreview: document.getElementById('clipboardPreview')
+    };
 
-                    request.onsuccess = (event) => {
-                        this.db = event.target.result;
-                        resolve(this.db);
-                    };
+    function init() {
+      loadState();
+      hydrateLegacyBookmarks();
+      hydrateGithubFields();
+      renderAll();
+      applyTheme();
+      bindEvents();
+      initCollapsibles();
+      initLibraryTabs();
+      setDefaultFolder();
+      prefillFromShareTarget();
+      setupClipboardModal();
+      setupManifest();
+      setupServiceWorker();
+      setTimeout(promptClipboardCapture, 800);
+    }
 
-                    request.onerror = (event) => {
-                        console.error("DB Error", event);
-                        reject('Database error');
-                    };
-                });
-            },
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        state.bookmarks = parsed.bookmarks || [];
+        state.theme = parsed.theme || state.theme;
+        state.github = { ...state.github, ...(parsed.github || {}) };
+      } catch (err) {
+        console.error('Failed to parse saved state', err);
+      }
+    }
 
-            async addItem(item) {
-                return new Promise((resolve, reject) => {
-                    const tx = this.db.transaction([STORE_NAME], 'readwrite');
-                    const store = tx.objectStore(STORE_NAME);
-                    const request = store.add(item);
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-            },
+    function hydrateLegacyBookmarks() {
+      let mutated = false;
+      state.bookmarks.forEach((bookmark) => {
+        if (!bookmark.folder) {
+          bookmark.folder = 'AI';
+          mutated = true;
+        }
+        if (!bookmark.siteName) {
+          bookmark.siteName = extractSiteName(bookmark.url);
+          mutated = true;
+        }
+        if (!bookmark.thumbnail) {
+          bookmark.thumbnail = getSitePreview(bookmark.url);
+          mutated = true;
+        }
+        if (bookmark.textTitle === undefined) {
+          bookmark.textTitle = '';
+          mutated = true;
+        }
+        if (bookmark.imageTitle === undefined) {
+          bookmark.imageTitle = '';
+          mutated = true;
+        }
+        if (bookmark.imageUrl === undefined) {
+          bookmark.imageUrl = '';
+          mutated = true;
+        }
+      });
+      if (mutated) {
+        persistState();
+      }
+    }
 
-            async getItemsByParent(parentId) {
-                return new Promise((resolve, reject) => {
-                    const tx = this.db.transaction([STORE_NAME], 'readonly');
-                    const store = tx.objectStore(STORE_NAME);
-                    const index = store.index('parentId');
-                    const request = index.getAll(parentId); // Fetch all items in folder
-                    
-                    request.onsuccess = () => {
-                        // Sort: Folders first, then by date descending
-                        const items = request.result;
-                        items.sort((a, b) => {
-                            if (a.type === b.type) {
-                                return b.createdAt - a.createdAt; // Newest first
-                            }
-                            return a.type === 'folder' ? -1 : 1; // Folders first
-                        });
-                        resolve(items);
-                    };
-                    request.onerror = () => reject(request.error);
-                });
-            },
+    function persistState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        bookmarks: state.bookmarks,
+        theme: state.theme,
+        github: state.github
+      }));
+    }
 
-            async deleteItem(id) {
-                // Note: If folder, ideally recursive delete. For simplicity, we delete just the item.
-                // Advanced: Check if folder and delete children.
-                return new Promise((resolve, reject) => {
-                    const tx = this.db.transaction([STORE_NAME], 'readwrite');
-                    const store = tx.objectStore(STORE_NAME);
-                    store.delete(id).onsuccess = () => resolve();
-                });
-            },
+    function hydrateGithubFields() {
+      dom.githubOwner.value = state.github.owner;
+      dom.githubRepo.value = state.github.repo;
+      dom.githubPath.value = state.github.path;
+      dom.githubToken.value = state.github.token;
+    }
 
-            async getBreadcrumbs(parentId) {
-                // Recursively climb up to build breadcrumbs
-                const crumbs = [];
-                let currentId = parentId;
-                
-                while (currentId !== 'root') {
-                    const item = await new Promise((resolve) => {
-                        const tx = this.db.transaction([STORE_NAME], 'readonly');
-                        tx.objectStore(STORE_NAME).get(currentId).onsuccess = (e) => resolve(e.target.result);
-                    });
-                    if (item) {
-                        crumbs.unshift({ id: item.id, name: item.title });
-                        currentId = item.parentId;
-                    } else {
-                        break; 
-                    }
-                }
-                crumbs.unshift({ id: 'root', name: 'Home' });
-                return crumbs;
-            },
+    function bindEvents() {
+      dom.form.addEventListener('submit', handleAddBookmark);
+      dom.searchInput.addEventListener('input', (e) => {
+        state.filters.search = e.target.value.toLowerCase();
+        renderBookmarkViews();
+      });
+      dom.themeToggle.addEventListener('click', toggleTheme);
+      dom.exportBtn.addEventListener('click', exportData);
+      dom.importInput.addEventListener('change', importData);
+      dom.clearFilters.addEventListener('click', () => {
+        state.filters = { folder: 'All', platform: 'All', search: '' };
+        dom.searchInput.value = '';
+        renderAll();
+      });
+      dom.githubOwner.addEventListener('input', (e) => updateGithubField('owner', e.target.value));
+      dom.githubRepo.addEventListener('input', (e) => updateGithubField('repo', e.target.value));
+      dom.githubPath.addEventListener('input', (e) => updateGithubField('path', e.target.value));
+      dom.githubToken.addEventListener('input', (e) => updateGithubField('token', e.target.value));
+      dom.pullGithub.addEventListener('click', pullFromGithub);
+      dom.pushGithub.addEventListener('click', pushToGithub);
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        dom.installBtn.disabled = false;
+      });
+      dom.installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) {
+          alert('Use your browser menu to install this app.');
+          return;
+        }
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        dom.installBtn.disabled = true;
+      });
+    }
 
-            async search(query) {
-                return new Promise((resolve) => {
-                    const tx = this.db.transaction([STORE_NAME], 'readonly');
-                    const store = tx.objectStore(STORE_NAME);
-                    const request = store.openCursor();
-                    const results = [];
-                    const lowerQ = query.toLowerCase();
+    function initCollapsibles() {
+      collapsibleSections = Array.from(document.querySelectorAll('[data-collapsible]'));
+      collapsibleSections.forEach((section) => {
+        const toggle = section.querySelector('[data-toggle]');
+        const defaultOpen = section.hasAttribute('data-default-open');
+        setSectionState(section, !defaultOpen);
+        if (toggle) {
+          toggle.addEventListener('click', () => toggleSection(section));
+        }
+      });
+      dom.expandAll.addEventListener('click', () => setAllSections(false));
+      dom.collapseAll.addEventListener('click', () => setAllSections(true));
+    }
 
-                    request.onsuccess = (event) => {
-                        const cursor = event.target.result;
-                        if (cursor) {
-                            if (cursor.value.title.toLowerCase().includes(lowerQ)) {
-                                results.push(cursor.value);
-                            }
-                            // Limit search results for performance if needed
-                            if (results.length < 100) cursor.continue();
-                        } else {
-                            resolve(results);
-                        }
-                    };
-                });
-            },
+    function toggleSection(section) {
+      const collapsed = section.dataset.collapsed === 'true';
+      setSectionState(section, !collapsed);
+    }
 
-            async exportAll() {
-                return new Promise((resolve) => {
-                    const tx = this.db.transaction([STORE_NAME], 'readonly');
-                    tx.objectStore(STORE_NAME).getAll().onsuccess = (e) => resolve(e.target.result);
-                });
-            },
+    function setSectionState(section, collapse) {
+      const body = section.querySelector('.collapsible-body');
+      const toggle = section.querySelector('[data-toggle]');
+      if (!body || !toggle) return;
+      if (collapse) {
+        section.classList.add('is-collapsed');
+        body.hidden = true;
+      } else {
+        section.classList.remove('is-collapsed');
+        body.hidden = false;
+      }
+      toggle.innerHTML = collapse
+        ? '<span class="toggle-icon">+</span><span>Expand</span>'
+        : '<span class="toggle-icon">−</span><span>Collapse</span>';
+      toggle.setAttribute('aria-expanded', (!collapse).toString());
+      section.dataset.collapsed = collapse ? 'true' : 'false';
+    }
 
-            async importAll(data) {
-                const tx = this.db.transaction([STORE_NAME], 'readwrite');
-                const store = tx.objectStore(STORE_NAME);
-                // Clear existing? Optional. Let's merge/overwrite based on ID
-                data.forEach(item => {
-                    store.put(item);
-                });
-                return new Promise((resolve) => {
-                    tx.oncomplete = () => resolve();
-                });
-            },
-            
-            async countItems() {
-                return new Promise(resolve => {
-                     const tx = this.db.transaction([STORE_NAME], 'readonly');
-                     tx.objectStore(STORE_NAME).count().onsuccess = (e) => resolve(e.target.result);
-                });
-            }
-        };
+    function setAllSections(collapse) {
+      collapsibleSections.forEach((section) => {
+        setSectionState(section, collapse);
+      });
+    }
 
-        /**
-         * APPLICATION LOGIC
-         */
-        const app = {
-            currentFolder: 'root',
-            activeTab: 'link', // link | folder
+    function initLibraryTabs() {
+      libraryTabButtons = Array.from(document.querySelectorAll('[data-library-tab]'));
+      libraryPanels = Array.from(document.querySelectorAll('[data-tab-panel]'));
+      libraryTabButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const tab = button.dataset.libraryTab;
+          if (tab === state.activeLibraryTab) return;
+          state.activeLibraryTab = tab;
+          updateLibraryTabs();
+        });
+      });
+      updateLibraryTabs();
+    }
 
-            async init() {
-                try {
-                    await dbService.connect();
-                    this.renderFolder(this.currentFolder);
-                    this.updateStats();
-                    this.checkSharedParams();
-                } catch (e) {
-                    console.error("Failed to init", e);
-                    alert("Database failed to open. Please use a modern browser.");
-                }
-            },
-            
-            checkSharedParams() {
-                // Check if opened via Share Target (URL Params)
-                const params = new URLSearchParams(window.location.search);
-                const title = params.get('title');
-                const text = params.get('text');
-                const url = params.get('url');
-                
-                if (title || text || url) {
-                    // If text contains a URL, extract it
-                    let finalUrl = url || text; 
-                    // Simple regex to find URL in text
-                    if (text && !url) {
-                        const match = text.match(/(https?:\/\/[^\s]+)/g);
-                        if (match) finalUrl = match[0];
-                    }
+    function updateLibraryTabs() {
+      libraryTabButtons.forEach((button) => {
+        const active = button.dataset.libraryTab === state.activeLibraryTab;
+        button.classList.toggle('active', active);
+      });
+      libraryPanels.forEach((panel) => {
+        const active = panel.dataset.tabPanel === state.activeLibraryTab;
+        panel.classList.toggle('hidden', !active);
+      });
+    }
 
-                    if (finalUrl) {
-                        this.showAddModal();
-                        document.getElementById('input-url').value = finalUrl;
-                        // Clean URL params so we don't add again on refresh
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    }
-                }
-            },
+    function setDefaultFolder() {
+      if (dom.folderField && !dom.folderField.value) {
+        dom.folderField.value = 'AI';
+      }
+    }
 
-            async renderFolder(folderId) {
-                this.currentFolder = folderId;
-                const grid = document.getElementById('content-grid');
-                const loading = document.getElementById('loading-spinner');
-                const empty = document.getElementById('empty-state');
-                
-                grid.innerHTML = '';
-                loading.classList.remove('hidden');
-                empty.classList.add('hidden');
+    async function handleAddBookmark(event) {
+      event.preventDefault();
+      const formData = new FormData(dom.form);
+      const platform = formData.get('platform');
+      const url = formData.get('url');
+      const folder = (formData.get('folder') || 'AI').trim();
+      const customTitle = formData.get('title');
+      const tags = (formData.get('tags') || '').split(',').map((t) => t.trim()).filter(Boolean);
+      const notes = formData.get('notes') || '';
+      const textSnippet = formData.get('textSnippet') || '';
+      const textTitle = (formData.get('textTitle') || '').trim();
+      const imageTitle = (formData.get('imageTitle') || '').trim();
+      const imageUrl = (formData.get('imageUrl') || '').trim();
+      const imageFile = formData.get('image');
 
-                // Update Back Button
-                const btnBack = document.getElementById('btn-back');
-                if (folderId !== 'root') {
-                    btnBack.classList.remove('hidden');
-                    btnBack.onclick = async () => {
-                        // Find parent of current folder
-                        // Since we don't store parent ref in memory, we query breadcrumbs
-                        const crumbs = await dbService.getBreadcrumbs(folderId);
-                        if (crumbs.length >= 2) {
-                            this.renderFolder(crumbs[crumbs.length - 2].id);
-                        } else {
-                            this.renderFolder('root');
-                        }
-                    };
-                } else {
-                    btnBack.classList.add('hidden');
-                }
+      if (!url && !textSnippet && !imageFile && !imageUrl) {
+        alert('Provide at least a URL, text snippet, or image.');
+        return;
+      }
 
-                // Render Breadcrumbs
-                const crumbs = await dbService.getBreadcrumbs(folderId);
-                const breadContainer = document.getElementById('breadcrumbs');
-                breadContainer.innerHTML = crumbs.map((c, index) => {
-                    const isLast = index === crumbs.length - 1;
-                    const color = isLast ? 'text-gray-800 font-bold' : 'text-blue-500 cursor-pointer';
-                    const event = isLast ? '' : `onclick="app.renderFolder('${c.id}')"`;
-                    return `<span class="${color} mx-1" ${event}>${c.name}</span> ${!isLast ? '<span class="text-gray-400">/</span>' : ''}`;
-                }).join('');
+      const bookmark = {
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36),
+        url,
+        platform,
+        folder,
+        tags,
+        notes,
+        textSnippet,
+        textTitle,
+        imageTitle,
+        imageUrl,
+        createdAt: new Date().toISOString(),
+        title: customTitle,
+        thumbnail: '',
+        imageData: '',
+        sourceType: detectSource(url),
+        siteName: extractSiteName(url)
+      };
 
-                // Get Items
-                const items = await dbService.getItemsByParent(folderId);
-                loading.classList.add('hidden');
+      if (imageFile && imageFile.size) {
+        bookmark.imageData = await fileToBase64(imageFile);
+      }
 
-                if (items.length === 0) {
-                    empty.classList.remove('hidden');
-                    return;
-                }
+      if (url) {
+        if (bookmark.sourceType === 'YouTube') {
+          await populateYoutubeMeta(url, bookmark, customTitle);
+        } else {
+          bookmark.title = customTitle || bookmark.title || url;
+        }
+        if (!bookmark.thumbnail) {
+          bookmark.thumbnail = getSitePreview(url);
+        }
+      } else {
+        bookmark.title = customTitle || textTitle || imageTitle || 'Untitled entry';
+      }
 
-                // Render Items
-                // Use DocumentFragment for performance
-                const frag = document.createDocumentFragment();
-                items.forEach(item => {
-                    const el = document.createElement('div');
-                    el.className = 'flex flex-col gap-2 p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all cursor-pointer group relative';
-                    
-                    if (item.type === 'folder') {
-                        el.onclick = () => this.renderFolder(item.id);
-                        el.innerHTML = `
-                            <div class="w-full aspect-[4/3] folder-icon rounded-lg flex items-center justify-center relative">
-                                <svg class="w-12 h-12 text-white/90 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                                </svg>
-                            </div>
-                            <span class="text-xs text-center font-medium text-gray-700 truncate px-1">${item.title}</span>
-                        `;
-                    } else {
-                        // Link
-                        el.onclick = () => window.open(item.url, '_blank');
-                        el.innerHTML = `
-                            <div class="yt-thumbnail-container bg-gray-200">
-                                <img src="${item.thumbnail || 'https://via.placeholder.com/300x200?text=No+Img'}" loading="lazy" alt="">
-                                <div class="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] px-1 rounded">
-                                    ${item.platform}
-                                </div>
-                            </div>
-                            <span class="text-xs font-medium text-gray-800 line-clamp-2 leading-tight h-8">${item.title}</span>
-                        `;
-                    }
+      state.bookmarks.unshift(bookmark);
+      persistState();
+      dom.form.reset();
+      setDefaultFolder();
+      renderAll();
+      toast('Saved to Mani\'s vault');
+    }
 
-                    // Delete Button (Long press or hover)
-                    const delBtn = document.createElement('button');
-                    delBtn.className = 'absolute top-1 right-1 bg-white/90 text-red-500 p-1 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity sm:block';
-                    // On Mobile, maybe show always? Or add a selection mode. 
-                    // For simplicity: Show on hover/focus.
-                    delBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
-                    delBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        if(confirm(`Delete "${item.title}"?`)) {
-                            dbService.deleteItem(item.id).then(() => this.renderFolder(this.currentFolder));
-                            this.updateStats();
-                        }
-                    };
-                    
-                    el.appendChild(delBtn);
-                    frag.appendChild(el);
-                });
+    function detectSource(url) {
+      if (!url) return 'Custom';
+      const u = url.toLowerCase();
+      if (u.includes('youtube.com') || u.includes('youtu.be')) return 'YouTube';
+      if (u.includes('twitter.com') || u.includes('x.com')) return 'Tweet';
+      if (u.includes('spotify.com') || u.includes('apple.com/podcast')) return 'Podcast';
+      if (u.includes('medium.com') || u.includes('dev.to') || u.includes('blog')) return 'Article';
+      return 'Custom';
+    }
 
-                grid.appendChild(frag);
-            },
+    async function populateYoutubeMeta(url, bookmark, customTitle) {
+      try {
+        const response = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+        if (!response.ok) throw new Error('noembed failed');
+        const data = await response.json();
+        bookmark.title = customTitle || data.title || url;
+        bookmark.thumbnail = data.thumbnail_url || '';
+      } catch (err) {
+        console.warn('Metadata fetch failed', err);
+        bookmark.title = customTitle || url;
+      }
+    }
 
-            // --- Modal & Form Logic ---
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
 
-            showAddModal() {
-                document.getElementById('add-modal').classList.remove('hidden');
-                document.getElementById('input-url').focus();
-            },
+    function renderAll() {
+      renderPlatformRail();
+      renderFolders();
+      hydrateFolderOptions();
+      renderBookmarkViews();
+    }
 
-            closeAddModal() {
-                document.getElementById('add-modal').classList.add('hidden');
-                document.getElementById('input-url').value = '';
-                document.getElementById('input-folder-name').value = '';
-            },
+    function renderBookmarkViews() {
+      const filtered = getFilteredBookmarks();
+      renderBookmarkGrid(filtered);
+      renderSnippetList(filtered);
+      renderImageGrid(filtered);
+    }
 
-            switchTab(tab) {
-                this.activeTab = tab;
-                const linkForm = document.getElementById('form-link');
-                const folderForm = document.getElementById('form-folder');
-                const linkTab = document.getElementById('tab-link');
-                const folderTab = document.getElementById('tab-folder');
+    function getFilteredBookmarks() {
+      return state.bookmarks.filter((bookmark) => {
+        const folderMatch = state.filters.folder === 'All' || bookmark.folder === state.filters.folder;
+        const platformMatch = state.filters.platform === 'All' || bookmark.platform === state.filters.platform || bookmark.sourceType === state.filters.platform;
+        const haystack = [bookmark.title, bookmark.notes, bookmark.tags?.join(' '), bookmark.textSnippet, bookmark.folder, bookmark.siteName, bookmark.textTitle, bookmark.imageTitle]
+          .join(' ')
+          .toLowerCase();
+        const searchMatch = !state.filters.search || haystack.includes(state.filters.search);
+        return folderMatch && platformMatch && searchMatch;
+      });
+    }
 
-                if (tab === 'link') {
-                    linkForm.classList.remove('hidden');
-                    folderForm.classList.add('hidden');
-                    linkTab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
-                    linkTab.classList.remove('text-gray-500');
-                    folderTab.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
-                    folderTab.classList.add('text-gray-500');
-                } else {
-                    linkForm.classList.add('hidden');
-                    folderForm.classList.remove('hidden');
-                    folderTab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
-                    folderTab.classList.remove('text-gray-500');
-                    linkTab.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
-                    linkTab.classList.add('text-gray-500');
-                }
-            },
+    function renderPlatformRail() {
+      const counts = PLATFORM_PRESETS.reduce((acc, key) => {
+        acc[key] = key === 'All'
+          ? state.bookmarks.length
+          : state.bookmarks.filter((b) => (b.platform || b.sourceType) === key || b.sourceType === key).length;
+        return acc;
+      }, {});
+      dom.platformRail.innerHTML = '';
+      PLATFORM_PRESETS.forEach((platform) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = `platform-chip border border-slate-200 ${state.filters.platform === platform ? 'active font-semibold' : ''}`;
+        chip.innerHTML = `<div class="flex flex-col text-left"><span class="text-xs uppercase tracking-wide text-slate-500">${platform}</span><span class="text-lg font-semibold">${counts[platform] || 0}</span></div>`;
+        chip.addEventListener('click', () => {
+          state.filters.platform = platform;
+          renderPlatformRail();
+          renderBookmarkViews();
+        });
+        dom.platformRail.appendChild(chip);
+      });
+    }
 
-            async saveItem() {
-                const id = Date.now().toString();
-                const createdAt = Date.now();
+    function renderFolders() {
+      const folderSet = new Set(state.bookmarks.map((b) => b.folder || 'AI'));
+      folderSet.add('AI');
+      const folders = ['All', ...folderSet];
+      dom.folderCount.textContent = `${folders.length - 1} folders`;
+      dom.folderList.innerHTML = '';
+      folders.forEach((folder) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `px-3 py-1.5 rounded-2xl border text-sm ${state.filters.folder === folder ? 'bg-slate-900 text-white' : 'bg-white/70 border-slate-200'}`;
+        btn.textContent = folder;
+        btn.addEventListener('click', () => {
+          state.filters.folder = folder;
+          renderFolders();
+          renderBookmarkViews();
+        });
+        dom.folderList.appendChild(btn);
+      });
+    }
 
-                if (this.activeTab === 'folder') {
-                    const name = document.getElementById('input-folder-name').value.trim();
-                    if (!name) return alert("Name required");
-                    
-                    await dbService.addItem({
-                        id,
-                        parentId: this.currentFolder,
-                        type: 'folder',
-                        title: name,
-                        createdAt
-                    });
-                } else {
-                    let url = document.getElementById('input-url').value.trim();
-                    if (!url) return alert("URL required");
+    function hydrateFolderOptions() {
+      const existing = new Set();
+      dom.folderOptions.innerHTML = '';
+      ['AI', ...state.bookmarks.map((b) => b.folder)].forEach((folder) => {
+        const value = folder || 'AI';
+        if (existing.has(value)) return;
+        existing.add(value);
+        const option = document.createElement('option');
+        option.value = value;
+        dom.folderOptions.appendChild(option);
+      });
+    }
 
-                    // FIX: Auto-add protocol if missing to prevent "Blocked" errors
-                    if (!/^https?:\/\//i.test(url)) {
-                        url = 'https://' + url;
-                    }
+    function renderBookmarkGrid(bookmarks) {
+      dom.bookmarkGrid.innerHTML = '';
+      if (!bookmarks.length) {
+        dom.emptyState.classList.remove('hidden');
+        return;
+      }
+      dom.emptyState.classList.add('hidden');
+      bookmarks.forEach((bookmark) => {
+        const siteName = bookmark.siteName || extractSiteName(bookmark.url);
+        const displayPlatform = siteName || bookmark.platform;
+        const card = document.createElement('article');
+        card.className = 'bookmark-card';
+        card.innerHTML = `
+          ${renderThumbnail(bookmark)}
+          <div class="space-y-1">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-xs uppercase tracking-wide text-slate-500">${bookmark.folder}</p>
+              <span class="text-xs px-2 py-1 rounded-xl bg-slate-900/5 text-slate-600">${displayPlatform || 'website'}</span>
+            </div>
+            <a href="${bookmark.url || '#'}" ${bookmark.url ? 'target="_blank" rel="noopener"' : ''} class="font-semibold leading-tight line-clamp-2">${bookmark.title || bookmark.url || bookmark.textTitle || 'Untitled entry'}</a>
+            <p class="text-xs text-slate-500">${bookmark.url ? new Date(bookmark.createdAt).toLocaleString() : 'Saved locally'}</p>
+          </div>
+          ${renderTags(bookmark.tags)}
+          ${renderNotes(bookmark.notes)}
+          <div class="flex gap-2">
+            ${bookmark.url ? '<button class="flex-1 border border-slate-200 px-3 py-2 text-sm" data-action="copy">Copy link</button>' : ''}
+            <button class="flex-1 border border-rose-200 text-rose-600 px-3 py-2 text-sm" data-action="delete">Delete</button>
+          </div>
+        `;
+        if (bookmark.url) {
+          card.querySelector('[data-action="copy"]').addEventListener('click', () => copyLink(bookmark.url));
+        }
+        card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteBookmark(bookmark.id));
+        dom.bookmarkGrid.appendChild(card);
+      });
+    }
 
-                    // Fetch Metadata
-                    const metadata = await this.fetchMetadata(url);
-                    
-                    await dbService.addItem({
-                        id,
-                        parentId: this.currentFolder,
-                        type: 'link',
-                        title: metadata.title || url,
-                        url: url,
-                        thumbnail: metadata.thumbnail,
-                        platform: metadata.platform,
-                        createdAt
-                    });
-                }
+    function renderSnippetList(bookmarks) {
+      dom.snippetList.innerHTML = '';
+      const snippets = bookmarks.filter((bookmark) => bookmark.textSnippet);
+      if (!snippets.length) {
+        dom.snippetEmpty.classList.remove('hidden');
+        return;
+      }
+      dom.snippetEmpty.classList.add('hidden');
+      snippets.forEach((bookmark) => {
+        const siteName = bookmark.siteName || extractSiteName(bookmark.url);
+        const card = document.createElement('article');
+        card.className = 'snippet-card';
+        card.innerHTML = `
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span class="uppercase">${bookmark.folder}</span>
+            <span>${siteName}</span>
+          </div>
+          <p class="font-semibold text-slate-800 dark:text-white">${bookmark.textTitle || bookmark.title || 'Untitled snippet'}</p>
+          <p class="text-sm text-slate-600 whitespace-pre-wrap">${bookmark.textSnippet}</p>
+          <button class="self-start rounded-2xl border border-slate-200 px-3 py-1 text-xs font-medium" data-action="copy-snippet">Copy snippet</button>
+        `;
+        card.querySelector('[data-action="copy-snippet"]').addEventListener('click', () => copyText(bookmark.textSnippet));
+        dom.snippetList.appendChild(card);
+      });
+    }
 
-                this.closeAddModal();
-                this.renderFolder(this.currentFolder);
-                this.updateStats();
-            },
+    function renderImageGrid(bookmarks) {
+      dom.imageGrid.innerHTML = '';
+      const images = bookmarks.filter((bookmark) => bookmark.imageData || bookmark.imageUrl);
+      if (!images.length) {
+        dom.imageEmpty.classList.remove('hidden');
+        return;
+      }
+      dom.imageEmpty.classList.add('hidden');
+      images.forEach((bookmark) => {
+        const siteName = bookmark.siteName || extractSiteName(bookmark.url);
+        const imageSource = bookmark.imageData || bookmark.imageUrl;
+        const card = document.createElement('article');
+        card.className = 'image-card';
+        card.innerHTML = `
+          <img src="${imageSource}" alt="Stored reference image for ${bookmark.imageTitle || bookmark.title || 'bookmark'}" loading="lazy">
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span class="uppercase">${bookmark.folder}</span>
+            <span>${siteName}</span>
+          </div>
+          <p class="font-semibold text-sm text-slate-800 dark:text-white">${bookmark.imageTitle || bookmark.title || 'Untitled image'}</p>
+          <button class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-medium self-start" data-action="view-image">Open image</button>
+        `;
+        card.querySelector('[data-action="view-image"]').addEventListener('click', () => openImage(imageSource));
+        dom.imageGrid.appendChild(card);
+      });
+    }
 
-            async fetchMetadata(url) {
-                let title = '';
-                let thumbnail = '';
-                let platform = 'Web';
+    function renderThumbnail(bookmark) {
+      const preview = bookmark.thumbnail || getSitePreview(bookmark.url);
+      if (preview) {
+        return `<img class="bookmark-thumb" src="${preview}" alt="Preview for ${bookmark.title || bookmark.url}" loading="lazy" onerror="this.onerror=null;this.src='https://s.wordpress.com/mshots/v1/${encodeURIComponent('https://example.com')}?w=800';">`;
+      }
+      return `<div class="flex items-center gap-3">
+        <div class="w-14 h-14 rounded-2xl bg-slate-200 flex items-center justify-center text-xl">📎</div>
+        <p class="text-sm text-slate-500 line-clamp-2">${bookmark.url || 'No link provided'}</p>
+      </div>`;
+    }
 
-                // Youtube Detection
-                const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-                const ytMatch = url.match(ytRegex);
+    function renderTags(tags = []) {
+      if (!tags.length) return '';
+      return `<div class="flex flex-wrap gap-1">${tags.map((tag) => `<span class="text-xs px-2 py-1 rounded-xl bg-slate-900/5 text-slate-600">${tag}</span>`).join('')}</div>`;
+    }
 
-                if (ytMatch) {
-                    const videoId = ytMatch[1];
-                    platform = 'YouTube';
-                    // High Quality thumb
-                    thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-                    
-                    // Try to get title via noembed (CORS friendly usually)
-                    try {
-                        const response = await fetch(`https://noembed.com/embed?url=${url}`);
-                        const data = await response.json();
-                        if (data.title) title = data.title;
-                    } catch (e) {
-                        console.log("Title fetch failed");
-                    }
-                } else {
-                    // Generic Favicon/Domain attempt
-                    try {
-                         const domain = new URL(url).hostname;
-                         thumbnail = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
-                         platform = domain.replace('www.','');
-                    } catch(e) {}
-                }
+    function renderNotes(notes) {
+      if (!notes) return '';
+      return `<p class="text-sm text-slate-600">${notes}</p>`;
+    }
 
-                return { title, thumbnail, platform };
-            },
+    function copyLink(url) {
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          toast('Link copied');
+        })
+        .catch(() => alert('Copy failed.'));
+    }
 
-            // --- Settings & Data Management ---
+    function copyText(text) {
+      navigator.clipboard.writeText(text)
+        .then(() => toast('Snippet copied'))
+        .catch(() => alert('Copy failed.'));
+    }
 
-            toggleMenu() {
-                const drawer = document.getElementById('menu-drawer');
-                const content = document.getElementById('menu-content');
-                
-                if (drawer.classList.contains('hidden')) {
-                    drawer.classList.remove('hidden');
-                    // Slight delay for animation
-                    setTimeout(() => {
-                        content.classList.remove('translate-x-full');
-                    }, 10);
-                } else {
-                    content.classList.add('translate-x-full');
-                    setTimeout(() => {
-                        drawer.classList.add('hidden');
-                    }, 300);
-                }
-            },
+    function openImage(source) {
+      const link = document.createElement('a');
+      link.href = source;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.click();
+    }
 
-            async exportData() {
-                const data = await dbService.exportAll();
-                const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `bookmarks_backup_${new Date().toISOString().slice(0,10)}.json`;
-                a.click();
-                this.toggleMenu();
-            },
+    function deleteBookmark(id) {
+      if (!confirm('Delete this entry?')) return;
+      state.bookmarks = state.bookmarks.filter((bookmark) => bookmark.id !== id);
+      persistState();
+      renderAll();
+    }
 
-            async importData(input) {
-                const file = input.files[0];
-                if (!file) return;
+    function toast(message) {
+      const el = document.createElement('div');
+      el.textContent = message;
+      el.className = 'fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2 rounded-2xl shadow-lg z-50';
+      document.body.appendChild(el);
+      setTimeout(() => {
+        el.remove();
+      }, 1800);
+    }
 
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        if (!Array.isArray(data)) throw new Error("Invalid Format");
-                        
-                        if(confirm(`Import ${data.length} items? This will merge with existing data.`)) {
-                             await dbService.importAll(data);
-                             alert("Import Successful!");
-                             this.renderFolder(this.currentFolder);
-                             this.updateStats();
-                        }
-                    } catch (err) {
-                        alert("Failed to parse file");
-                    }
-                    this.toggleMenu();
-                };
-                reader.readAsText(file);
-            },
-            
-            async updateStats() {
-                const count = await dbService.countItems();
-                document.getElementById('item-count').innerText = `${count} Items`;
-                // Fake bar for visual
-                const width = Math.min(100, (count / 10000) * 100);
-                document.getElementById('storage-bar').style.width = `${Math.max(1, width)}%`;
-            },
-            
-            openSearch() {
-                const q = prompt("Search bookmarks:");
-                if(q) {
-                    this.performSearch(q);
-                }
-            },
-            
-            async performSearch(query) {
-                 const results = await dbService.search(query);
-                 
-                 const grid = document.getElementById('content-grid');
-                 grid.innerHTML = '';
-                 document.getElementById('breadcrumbs').innerHTML = `<span class="text-gray-800 font-bold mx-1">Search Results: "${query}"</span>`;
-                 document.getElementById('btn-back').classList.remove('hidden');
-                 document.getElementById('btn-back').onclick = () => this.renderFolder('root');
-                 
-                 if(results.length === 0) {
-                     document.getElementById('empty-state').classList.remove('hidden');
-                     return;
-                 }
-                 document.getElementById('empty-state').classList.add('hidden');
-                 
-                 // Render basic results (Similar logic to renderFolder, simplified)
-                 const frag = document.createDocumentFragment();
-                 results.forEach(item => {
-                     const el = document.createElement('div');
-                     el.className = 'flex flex-col gap-2 p-2 rounded-lg hover:bg-white cursor-pointer';
-                     // For simplicity in search, just show list items
-                     el.innerHTML = `
-                        <div class="bg-white p-2 rounded shadow-sm flex gap-2 items-center">
-                             <div class="w-10 h-10 bg-gray-200 shrink-0 rounded overflow-hidden">
-                                 ${item.type === 'folder' ? '<div class="w-full h-full bg-yellow-500"></div>' : `<img src="${item.thumbnail}" class="w-full h-full object-cover">`}
-                             </div>
-                             <div class="overflow-hidden">
-                                 <div class="text-sm font-bold truncate">${item.title}</div>
-                                 <div class="text-xs text-gray-500 truncate">${item.url || 'Folder'}</div>
-                             </div>
-                        </div>
-                     `;
-                     el.onclick = () => {
-                         if(item.type === 'folder') this.renderFolder(item.id);
-                         else window.open(item.url, '_blank');
-                     };
-                     frag.appendChild(el);
-                 });
-                 grid.appendChild(frag);
-            },
+    function toggleTheme() {
+      const idx = THEME_SEQUENCE.indexOf(state.theme);
+      const next = (idx + 1) % THEME_SEQUENCE.length;
+      state.theme = THEME_SEQUENCE[next];
+      applyTheme();
+      persistState();
+    }
 
-            showInfo() {
-                document.getElementById('info-modal').classList.remove('hidden');
-            },
-            closeInfo() {
-                document.getElementById('info-modal').classList.add('hidden');
-            },
-            
-            downloadManifest() {
-                const manifest = {
-                    "name": "LinkVault",
-                    "short_name": "LinkVault",
-                    "start_url": "./index.html",
-                    "display": "standalone",
-                    "background_color": "#ffffff",
-                    "theme_color": "#3b82f6",
-                    "icons": [
-                        {
-                            "src": "https://via.placeholder.com/192/3b82f6/ffffff?text=LV",
-                            "sizes": "192x192",
-                            "type": "image/png"
-                        },
-                        {
-                            "src": "https://via.placeholder.com/512/3b82f6/ffffff?text=LV",
-                            "sizes": "512x512",
-                            "type": "image/png"
-                        }
-                    ],
-                    "share_target": {
-                        "action": "./index.html",
-                        "method": "GET",
-                        "enctype": "application/x-www-form-urlencoded",
-                        "params": {
-                            "title": "title",
-                            "text": "text",
-                            "url": "url"
-                        }
-                    }
-                };
-                
-                const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'manifest.json';
-                a.click();
-            }
-        };
+    function applyTheme() {
+      document.body.setAttribute('data-theme', state.theme);
+      dom.themeToggle.textContent = `Theme: ${state.theme.charAt(0).toUpperCase() + state.theme.slice(1)}`;
+    }
 
-        // Init
-        window.onload = () => app.init();
+    function exportData() {
+      const payload = JSON.stringify({ bookmarks: state.bookmarks }, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'bookmark-vault.json';
+      link.click();
+      URL.revokeObjectURL(url);
+    }
 
-    </script>
+    function importData(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          state.bookmarks = Array.isArray(parsed) ? parsed : parsed.bookmarks || [];
+          hydrateLegacyBookmarks();
+          persistState();
+          renderAll();
+          toast('Imported successfully');
+        } catch (err) {
+          alert('Import failed: invalid JSON');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function updateGithubField(field, value) {
+      state.github[field] = value;
+      persistState();
+    }
+
+    async function pushToGithub() {
+      const { owner, repo, path, token } = state.github;
+      if (!owner || !repo || !path || !token) {
+        alert('Fill GitHub fields first.');
+        return;
+      }
+      setGithubStatus('Pushing to GitHub...');
+      try {
+        const api = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+        let sha;
+        const head = await fetch(api, { headers: authHeader(token) });
+        if (head.ok) {
+          const existing = await head.json();
+          sha = existing.sha;
+        }
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify({ bookmarks: state.bookmarks }, null, 2))));
+        const response = await fetch(api, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader(token)
+          },
+          body: JSON.stringify({
+            message: 'Update bookmarks from Mani\'s vault',
+            content,
+            sha
+          })
+        });
+        if (!response.ok) throw new Error('Push failed');
+        setGithubStatus('Synced to GitHub ✔');
+      } catch (err) {
+        console.error(err);
+        setGithubStatus('GitHub push failed. Check console.');
+      }
+    }
+
+    async function pullFromGithub() {
+      const { owner, repo, path, token } = state.github;
+      if (!owner || !repo || !path || !token) {
+        alert('Fill GitHub fields first.');
+        return;
+      }
+      setGithubStatus('Pulling from GitHub...');
+      try {
+        const api = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+        const response = await fetch(api, { headers: authHeader(token) });
+        if (!response.ok) throw new Error('File not found');
+        const data = await response.json();
+        const decoded = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+        const parsed = JSON.parse(decoded);
+        state.bookmarks = parsed.bookmarks || parsed;
+        hydrateLegacyBookmarks();
+        persistState();
+        renderAll();
+        setGithubStatus('Pulled latest data ✔');
+      } catch (err) {
+        console.error(err);
+        setGithubStatus('GitHub pull failed.');
+      }
+    }
+
+    function authHeader(token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+
+    function setGithubStatus(message) {
+      dom.githubStatus.textContent = `Status: ${message}`;
+    }
+
+    function prefillFromShareTarget() {
+      const params = new URLSearchParams(window.location.search);
+      const sharedUrl = params.get('sharedUrl');
+      const sharedTitle = params.get('sharedTitle');
+      const sharedText = params.get('sharedText');
+      if (sharedUrl) dom.urlInput.value = sharedUrl;
+      if (sharedTitle) dom.form.elements['title'].value = sharedTitle;
+      if (sharedText) dom.form.elements['textSnippet'].value = sharedText;
+      if (sharedText) dom.form.elements['textTitle'].value = sharedTitle || 'Shared text';
+      if (sharedUrl || sharedText) {
+        scrollToForm();
+        toast('Share captured — finish the form to save.');
+      }
+    }
+
+    function getSitePreview(url) {
+      try {
+        if (!url) return '';
+        return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=800`;
+      } catch (err) {
+        return '';
+      }
+    }
+
+    function extractSiteName(url) {
+      try {
+        if (!url) return 'no-link';
+        const { hostname } = new URL(url);
+        return hostname.replace(/^www\./, '');
+      } catch (err) {
+        return 'website';
+      }
+    }
+
+    function setupManifest() {
+      const manifest = {
+        name: "Mani's Bookmark Vault",
+        short_name: 'Bookmark Vault',
+        start_url: './',
+        display: 'standalone',
+        background_color: '#0f172a',
+        theme_color: '#ffca3a',
+        icons: [
+          {
+            src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="25" fill="%230f172a"/><path d="M25 25h50v50L50 60 25 75Z" fill="%23ffca3a"/></svg>',
+            sizes: '256x256',
+            type: 'image/svg+xml'
+          }
+        ],
+        share_target: {
+          action: './',
+          method: 'GET',
+          enctype: 'application/x-www-form-urlencoded',
+          params: {
+            title: 'sharedTitle',
+            text: 'sharedText',
+            url: 'sharedUrl'
+          }
+        }
+      };
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = url;
+      document.head.appendChild(link);
+    }
+
+    function setupServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      const swCode = `const CACHE_NAME='bookmark-vault-cache-v1';
+      const ASSETS=['./'];
+      self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
+      self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))));self.clients.claim();});
+      self.addEventListener('fetch',event=>{event.respondWith(caches.match(event.request).then(response=>response||fetch(event.request)));});`;
+      const blob = new Blob([swCode], { type: 'text/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).catch(console.error);
+    }
+
+    function setupClipboardModal() {
+      if (!dom.clipboardModal) return;
+      dom.clipboardModal.querySelectorAll('[data-clip-action]').forEach((button) => {
+        button.addEventListener('click', handleClipboardDecision);
+      });
+      const dismiss = dom.clipboardModal.querySelector('[data-clip-dismiss]');
+      if (dismiss) dismiss.addEventListener('click', hideClipboardModal);
+      dom.clipboardModal.addEventListener('click', (event) => {
+        if (event.target === dom.clipboardModal) hideClipboardModal();
+      });
+    }
+
+    async function promptClipboardCapture() {
+      if (!navigator.clipboard?.readText) return;
+      try {
+        const permission = await navigator.permissions?.query({ name: 'clipboard-read' });
+        if (permission && permission.state === 'denied') return;
+      } catch (err) {
+        console.warn('Clipboard permission query failed', err);
+      }
+      try {
+        const text = (await navigator.clipboard.readText()).trim();
+        if (!text) return;
+        const last = sessionStorage.getItem('lastClipboardPrompt');
+        if (last === text) return;
+        clipboardBuffer = text;
+        dom.clipboardPreview.textContent = text.length > 400 ? `${text.slice(0, 400)}…` : text;
+        dom.clipboardModal.classList.remove('hidden');
+        document.body.classList.add('modal-open');
+      } catch (err) {
+        console.warn('Clipboard read blocked', err);
+      }
+    }
+
+    function hideClipboardModal() {
+      dom.clipboardModal.classList.add('hidden');
+      document.body.classList.remove('modal-open');
+      if (clipboardBuffer) sessionStorage.setItem('lastClipboardPrompt', clipboardBuffer);
+    }
+
+    function handleClipboardDecision(event) {
+      const action = event.currentTarget.dataset.clipAction;
+      if (!clipboardBuffer) return;
+      if (action === 'bookmark') {
+        if (!isLikelyUrl(clipboardBuffer)) {
+          alert('Clipboard item is not a URL. Try saving as text or image.');
+          return;
+        }
+        dom.urlInput.value = clipboardBuffer;
+        scrollToForm();
+        toast('Clipboard link moved to the form.');
+      }
+      if (action === 'text') {
+        dom.form.elements['textSnippet'].value = clipboardBuffer;
+        if (!dom.form.elements['textTitle'].value) {
+          dom.form.elements['textTitle'].value = generateClipboardTitle('Text');
+        }
+        scrollToForm();
+        toast('Clipboard text captured.');
+      }
+      if (action === 'image') {
+        if (!isImageish(clipboardBuffer)) {
+          alert('Clipboard link does not look like an image URL.');
+          return;
+        }
+        dom.form.elements['imageUrl'].value = clipboardBuffer;
+        if (!dom.form.elements['imageTitle'].value) {
+          dom.form.elements['imageTitle'].value = generateClipboardTitle('Image');
+        }
+        scrollToForm();
+        toast('Clipboard image URL captured.');
+      }
+      hideClipboardModal();
+    }
+
+    function isLikelyUrl(value) {
+      if (!value) return false;
+      try {
+        new URL(value);
+        return true;
+      } catch (err) {
+        return /^https?:\/\//i.test(value);
+      }
+    }
+
+    function isImageish(value) {
+      if (!value) return false;
+      if (/^data:image\//.test(value)) return true;
+      return /(\.png|\.jpe?g|\.gif|\.webp|\.svg)$/i.test(value.split('?')[0]);
+    }
+
+    function generateClipboardTitle(prefix) {
+      const preview = clipboardBuffer.length > 18 ? `${clipboardBuffer.slice(0, 18)}…` : clipboardBuffer;
+      return `${prefix} · ${preview || new Date().toLocaleTimeString()}`;
+    }
+
+    function scrollToForm() {
+      dom.form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    init();
+  </script>
 </body>
 </html>
