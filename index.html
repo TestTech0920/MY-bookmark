@@ -40,7 +40,11 @@
     }
     input, select, textarea {
       color: inherit;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.95);
+    }
+    input::placeholder,
+    textarea::placeholder {
+      color: #94a3b8;
     }
     body[data-theme="midnight"] input,
     body[data-theme="midnight"] select,
@@ -129,8 +133,8 @@
       background: rgba(9, 13, 29, 0.95);
     }
     .bookmark-thumb {
-      width: 84px;
-      height: 84px;
+      width: 78px;
+      height: 78px;
       border-radius: 18px;
       object-fit: cover;
       background: #e8ecf5;
@@ -280,6 +284,12 @@
       display: grid;
       gap: 1.5rem;
     }
+    #addBookmarkSection {
+      order: 1;
+    }
+    #librarySection {
+      order: 2;
+    }
     @media (min-width: 1024px) {
       #primaryWorkspace {
         grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
@@ -312,6 +322,61 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .autocomplete-panel {
+      box-shadow: 0 20px 30px rgba(15, 23, 42, 0.15);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.98);
+    }
+    body[data-theme="midnight"] .autocomplete-panel {
+      background: rgba(7, 10, 23, 0.95);
+      border-color: rgba(255, 255, 255, 0.08);
+      color: #f5f5f5;
+    }
+    .autocomplete-item {
+      padding: 0.55rem 0.85rem;
+      font-size: 0.85rem;
+      text-align: left;
+      width: 100%;
+    }
+    .autocomplete-item:hover {
+      background: rgba(15, 23, 42, 0.05);
+    }
+    body[data-theme="midnight"] .autocomplete-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 0.8rem 1.2rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.92);
+      color: #fff;
+      font-size: 0.85rem;
+      box-shadow: 0 15px 35px rgba(15, 23, 42, 0.3);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 60;
+      pointer-events: none;
+    }
+    body[data-theme="midnight"] #toast,
+    body[data-theme="neon"] #toast {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    #toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body data-theme="sunrise">
@@ -324,7 +389,8 @@
           <p class="text-slate-700 dark:text-slate-200 max-w-2xl mt-2">Save anything you copy or share — links, notes, and reference images — categorize instantly, and sync privately. Full clipboard prompts, folder rails, and dedicated tabs keep every medium neat.</p>
         </div>
         <div class="actions flex flex-wrap items-center gap-3">
-          <button id="saveEntryTop" class="px-4 py-2 rounded-2xl border border-white/60 bg-white/80 text-slate-900 font-medium shadow-sm">Save entry</button>
+          <button id="saveEntryTop" class="px-4 py-2 rounded-2xl border border-white/60 bg-white/80 text-slate-900 font-medium shadow-sm">Add bookmark</button>
+          <button id="clipboardCheck" class="px-4 py-2 rounded-2xl border border-slate-200 bg-white/70 text-slate-900 font-medium shadow-sm">Capture clipboard</button>
           <button id="themeToggle" class="px-4 py-2 rounded-2xl border border-white/40 bg-white/70 text-slate-900 font-medium shadow-sm">
             Theme: Sunrise
           </button>
@@ -442,7 +508,11 @@
         <div class="collapsible-body space-y-4">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p class="text-sm text-slate-500">Type anything to filter site names, tags, notes, snippets, or image titles.</p>
-            <input id="searchInput" type="search" placeholder="Search bookmarks · text · images" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 w-full sm:w-72">
+            <div class="relative w-full sm:w-72">
+              <input id="searchInput" list="searchSuggestions" type="search" placeholder="Search bookmarks · text · images" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 w-full">
+              <datalist id="searchSuggestions"></datalist>
+              <div id="searchAutocomplete" class="autocomplete-panel absolute top-full left-0 right-0 mt-1 hidden z-10 max-h-52 overflow-auto"></div>
+            </div>
           </div>
           <div class="library-tabs" id="libraryTabs">
             <button type="button" class="active" data-library-tab="bookmarks">Bookmarks</button>
@@ -450,9 +520,15 @@
             <button type="button" data-library-tab="images">Reference images</button>
           </div>
           <div class="library-panel" data-tab-panel="bookmarks">
-            <div id="bookmarkGrid" class="grid gap-4">
-            </div>
+            <div id="bookmarkGrid" class="grid gap-4"></div>
             <p id="emptyState" class="text-center text-sm text-slate-500 hidden">Start saving! Your bookmarks will appear here.</p>
+            <div id="bookmarkPagination" class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 mt-3 hidden">
+              <span id="paginationInfo" class="font-medium"></span>
+              <div class="flex gap-2">
+                <button id="prevPage" class="rounded-2xl border border-slate-200 bg-white/70 px-3 py-1.5 disabled:opacity-50">‹ Prev</button>
+                <button id="nextPage" class="rounded-2xl border border-slate-200 bg-white/70 px-3 py-1.5 disabled:opacity-50">Next ›</button>
+              </div>
+            </div>
           </div>
           <div class="library-panel hidden" data-tab-panel="snippets">
             <div id="snippetList" class="space-y-3"></div>
@@ -485,7 +561,7 @@
             <p class="text-sm text-slate-600 dark:text-slate-200">Use import/export when migrating or sharing your vault offline.</p>
             <div class="rounded-2xl border border-dashed border-slate-300 p-3 text-xs text-slate-500">
               <p class="font-semibold text-slate-700 dark:text-white">Share Target ready</p>
-              <p>Send links, text, or images from Android share sheets. Incoming <code>?sharedUrl=</code> / <code>?sharedText=</code> parameters auto-populate the form.</p>
+              <p>Install the PWA once, then share links, text, or images from any app directly into Mani's Vault. Android sends data via the built-in share sheet.</p>
             </div>
           </div>
         </section>
@@ -546,9 +622,9 @@
             <ol class="list-decimal list-inside space-y-1">
               <li><strong>Repo setup:</strong> create a new GitHub repo and add this <code>index.html</code>. Commit + push to <code>main</code>.</li>
               <li><strong>Enable Pages:</strong> Settings → Pages → Build & deployment → select <em>Deploy from branch</em>, branch <code>main</code>, folder <code>/</code>.</li>
-              <li><strong>Wait & verify:</strong> GitHub builds in ~1 min. Visit the URL displayed in the Pages panel; install prompt appears on HTTPS.</li>
+              <li><strong>HTTPS testing:</strong> wait ~1 minute, then visit the Pages URL on mobile. The install banner enables PWA + share target prompts.</li>
               <li><strong>Optional seed data:</strong> upload a <code>data/bookmarks.json</code> exported from the app to pre-fill new visitors.</li>
-              <li><strong>CDN assets:</strong> everything is inline, so a single <code>index.html</code> is enough for Pages + PWA caching.</li>
+              <li><strong>One-file deploy:</strong> everything (styles, manifest, SW) is inline, so a single <code>index.html</code> is enough.</li>
             </ol>
           </div>
           <div class="rounded-2xl border border-slate-200/60 p-4 space-y-2">
@@ -556,7 +632,7 @@
             <ol class="list-decimal list-inside space-y-1">
               <li>Generate a classic Personal Access Token with <code>repo</code> scope (Settings → Developer settings → PATs).</li>
               <li>Fill Owner, Repo, Path (e.g. <code>vault/bookmarks.json</code>) and paste the token into the Sync card.</li>
-              <li><strong>Push</strong>: serializes current localStorage data, Base64 encodes it, and updates/creates the GitHub file (keeps SHA so history is preserved).</li>
+              <li><strong>Push</strong>: serializes localStorage data, Base64 encodes it, and updates/creates the GitHub file (keeps SHA so history is preserved).</li>
               <li><strong>Pull</strong>: downloads JSON from GitHub, replaces your local vault, and re-renders. Always export a backup first.</li>
               <li>For private repos, ensure the token user has write access. Revoke tokens if the device is lost.</li>
             </ol>
@@ -565,8 +641,9 @@
         <div class="rounded-2xl border border-slate-200/60 p-4 space-y-2">
           <h3 class="font-semibold">Share links, text, or images from any app</h3>
           <ul class="list-disc list-inside space-y-1">
-            <li><strong>Clipboard prompt:</strong> if you copied anything before opening, Mani's Vault asks whether to store it as a bookmark, text snippet, or image.</li>
-            <li><strong>Android/iOS share sheet:</strong> use the installed PWA → Mani's Vault reads <code>sharedUrl</code>, <code>sharedText</code>, and <code>sharedTitle</code> parameters and pre-fills the form.</li>
+            <li><strong>Install once:</strong> install the PWA on Android/iOS. Mani's Vault registers as a Share Target.</li>
+            <li><strong>Share sheets:</strong> pick Mani's Vault in any app → the share sheet forwards <code>sharedUrl</code>, <code>sharedText</code>, and <code>sharedTitle</code> parameters to pre-fill the form instantly.</li>
+            <li><strong>Clipboard watcher:</strong> copied content is detected whenever you return to the tab—no refresh required.</li>
             <li><strong>Images:</strong> upload files or paste image URLs; they appear in the dedicated Images tab.</li>
             <li><strong>Text:</strong> every snippet gets its own title so long transcripts stay organized.</li>
           </ul>
@@ -591,6 +668,8 @@
           <li>Render timeline analytics (items saved per week/platform).</li>
           <li>Integrate RSS/Readwise-style auto-importers for saved sources.</li>
           <li>Provide Siri/Assistant shortcuts to save the current clipboard without opening the UI.</li>
+          <li>Auto-tag entries using AI topic detection to keep folders tidy.</li>
+          <li>Add spaced-repetition reminders for notes you want to revisit.</li>
         </ul>
       </div>
     </section>
@@ -612,6 +691,8 @@
     </div>
   </div>
 
+  <div id="toast" role="status" aria-live="polite"></div>
+
   <script>
     const STORAGE_KEY = 'universalBookmarkVault';
     const PLATFORM_PRESETS = ['All', 'YouTube', 'Article', 'Podcast', 'Tweet', 'Custom'];
@@ -620,14 +701,19 @@
       theme: 'sunrise',
       bookmarks: [],
       filters: { folder: 'All', platform: 'All', search: '' },
-      github: { owner: '', repo: '', path: 'data/bookmarks.json', token: '' },
-      activeLibraryTab: 'bookmarks'
+      github: { owner: '', repo: '', path: 'data/bookmarks.json', token: '', sha: '' },
+      activeLibraryTab: 'bookmarks',
+      pagination: { page: 1, perPage: 30 },
+      suggestionBank: []
     };
     let deferredPrompt = null;
     let collapsibleSections = [];
     let libraryTabButtons = [];
     let libraryPanels = [];
     let clipboardBuffer = '';
+    let clipboardCooldown = false;
+    let sharedImageAttachment = null;
+    const clipboardState = { text: '' };
 
     const dom = {
       body: document.body,
@@ -638,6 +724,8 @@
       bookmarkGrid: document.getElementById('bookmarkGrid'),
       emptyState: document.getElementById('emptyState'),
       searchInput: document.getElementById('searchInput'),
+      searchSuggestions: document.getElementById('searchSuggestions'),
+      searchAutocomplete: document.getElementById('searchAutocomplete'),
       themeToggle: document.getElementById('themeToggle'),
       installBtn: document.getElementById('installPwaBtn'),
       exportBtn: document.getElementById('exportBtn'),
@@ -661,8 +749,16 @@
       folderField: document.querySelector('input[name="folder"]'),
       clipboardModal: document.getElementById('clipboardModal'),
       clipboardPreview: document.getElementById('clipboardPreview'),
-      saveEntryTop: document.getElementById('saveEntryTop')
+      saveEntryTop: document.getElementById('saveEntryTop'),
+      clipboardCheck: document.getElementById('clipboardCheck'),
+      bookmarkPagination: document.getElementById('bookmarkPagination'),
+      paginationInfo: document.getElementById('paginationInfo'),
+      prevPage: document.getElementById('prevPage'),
+      nextPage: document.getElementById('nextPage'),
+      toast: document.getElementById('toast')
     };
+
+    document.addEventListener('DOMContentLoaded', init);
 
     function init() {
       loadState();
@@ -674,11 +770,12 @@
       initCollapsibles();
       initLibraryTabs();
       setDefaultFolder();
-      prefillFromShareTarget();
       setupClipboardModal();
+      prefillFromShareTarget();
+      setupShareTargetListener();
       setupManifest();
       setupServiceWorker();
-      setTimeout(promptClipboardCapture, 800);
+      setTimeout(() => promptClipboardCapture({ force: true }), 800);
     }
 
     function loadState() {
@@ -744,9 +841,13 @@
 
     function bindEvents() {
       dom.form.addEventListener('submit', handleAddBookmark);
-      dom.searchInput.addEventListener('input', (e) => {
-        state.filters.search = e.target.value.toLowerCase();
-        renderBookmarkViews();
+      dom.searchInput.addEventListener('input', handleSearchInput);
+      dom.searchInput.addEventListener('focus', handleSearchInput);
+      document.addEventListener('click', (event) => {
+        if (!dom.searchAutocomplete) return;
+        if (event.target === dom.searchInput) return;
+        if (dom.searchAutocomplete.contains(event.target)) return;
+        hideAutocomplete();
       });
       dom.themeToggle.addEventListener('click', toggleTheme);
       dom.exportBtn.addEventListener('click', exportData);
@@ -754,6 +855,8 @@
       dom.clearFilters.addEventListener('click', () => {
         state.filters = { folder: 'All', platform: 'All', search: '' };
         dom.searchInput.value = '';
+        hideAutocomplete();
+        resetPagination();
         renderAll();
       });
       dom.githubOwner.addEventListener('input', (e) => updateGithubField('owner', e.target.value));
@@ -762,6 +865,9 @@
       dom.githubToken.addEventListener('input', (e) => updateGithubField('token', e.target.value));
       dom.pullGithub.addEventListener('click', pullFromGithub);
       dom.pushGithub.addEventListener('click', pushToGithub);
+      dom.prevPage.addEventListener('click', () => changePage(-1));
+      dom.nextPage.addEventListener('click', () => changePage(1));
+      dom.clipboardCheck.addEventListener('click', () => promptClipboardCapture({ force: true, manual: true }));
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
@@ -777,12 +883,25 @@
         deferredPrompt = null;
         dom.installBtn.disabled = true;
       });
-      if (dom.saveEntryTop) {
-        dom.saveEntryTop.addEventListener('click', (event) => {
-          event.preventDefault();
-          scrollToForm();
-        });
-      }
+      dom.saveEntryTop.addEventListener('click', (event) => {
+        event.preventDefault();
+        scrollToForm();
+      });
+      window.addEventListener('focus', () => setTimeout(() => promptClipboardCapture(), 300));
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          setTimeout(() => promptClipboardCapture(), 200);
+        }
+      });
+      window.addEventListener('pageshow', () => setTimeout(() => promptClipboardCapture(), 300));
+    }
+
+    function handleSearchInput(e) {
+      const value = e.target.value.toLowerCase();
+      state.filters.search = value;
+      resetPagination();
+      renderBookmarkViews();
+      renderAutocompleteSuggestions(value);
     }
 
     function initCollapsibles() {
@@ -875,7 +994,7 @@
       const imageUrl = (formData.get('imageUrl') || '').trim();
       const imageFile = formData.get('image');
 
-      if (!url && !textSnippet && !imageFile && !imageUrl) {
+      if (!url && !textSnippet && (!imageFile || !imageFile.size) && !imageUrl && !sharedImageAttachment) {
         alert('Provide at least a URL, text snippet, or image.');
         return;
       }
@@ -901,6 +1020,10 @@
 
       if (imageFile && imageFile.size) {
         bookmark.imageData = await fileToBase64(imageFile);
+      } else if (sharedImageAttachment) {
+        bookmark.imageData = sharedImageAttachment.data;
+        bookmark.imageTitle = bookmark.imageTitle || sharedImageAttachment.name || 'Shared image';
+        sharedImageAttachment = null;
       }
 
       if (url) {
@@ -920,6 +1043,7 @@
       persistState();
       dom.form.reset();
       setDefaultFolder();
+      resetPagination();
       renderAll();
       toast('Saved to Mani\'s vault');
     }
@@ -961,6 +1085,7 @@
       renderFolders();
       hydrateFolderOptions();
       renderBookmarkViews();
+      updateSearchSuggestions();
     }
 
     function renderBookmarkViews() {
@@ -997,6 +1122,7 @@
         chip.innerHTML = `<div class="flex flex-col text-left"><span class="text-xs uppercase tracking-wide text-slate-500">${platform}</span><span class="text-lg font-semibold">${counts[platform] || 0}</span></div>`;
         chip.addEventListener('click', () => {
           state.filters.platform = platform;
+          resetPagination();
           renderPlatformRail();
           renderBookmarkViews();
         });
@@ -1017,6 +1143,7 @@
         btn.textContent = folder;
         btn.addEventListener('click', () => {
           state.filters.folder = folder;
+          resetPagination();
           renderFolders();
           renderBookmarkViews();
         });
@@ -1038,15 +1165,25 @@
     }
 
     function renderBookmarkGrid(bookmarks) {
+      const total = bookmarks.length;
+      const perPage = state.pagination.perPage;
+      const totalPages = Math.max(1, Math.ceil(Math.max(total, 1) / perPage));
+      if (state.pagination.page > totalPages) {
+        state.pagination.page = totalPages;
+      }
+      const startIndex = (state.pagination.page - 1) * perPage;
+      const paginated = bookmarks.slice(startIndex, startIndex + perPage);
       dom.bookmarkGrid.innerHTML = '';
-      if (!bookmarks.length) {
+      if (!paginated.length) {
         dom.emptyState.classList.remove('hidden');
+        updatePaginationControls({ totalPages: 1, total: 0, showing: 0, startIndex: 0 });
         return;
       }
       dom.emptyState.classList.add('hidden');
-      bookmarks.forEach((bookmark, index) => {
+      paginated.forEach((bookmark, index) => {
         const siteName = bookmark.siteName || extractSiteName(bookmark.url);
         const displayPlatform = siteName || bookmark.platform;
+        const displayIndex = startIndex + index + 1;
         const card = document.createElement('article');
         card.className = 'bookmark-card';
         card.innerHTML = `
@@ -1054,7 +1191,7 @@
             ${renderThumbnail(bookmark)}
             <div class="flex-1 space-y-2">
               <div class="bookmark-meta">
-                <span class="bookmark-index">#${index + 1}</span>
+                <span class="bookmark-index">#${displayIndex.toString().padStart(2, '0')}</span>
                 <span>${bookmark.folder}</span>
                 <span>${displayPlatform || 'website'}</span>
               </div>
@@ -1075,99 +1212,118 @@
         card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteBookmark(bookmark.id));
         dom.bookmarkGrid.appendChild(card);
       });
+      updatePaginationControls({ totalPages: Math.max(1, Math.ceil(total / perPage)), total, showing: paginated.length, startIndex });
+    }
+
+    function updatePaginationControls({ totalPages, total, showing, startIndex }) {
+      if (!dom.bookmarkPagination) return;
+      if (!total) {
+        dom.bookmarkPagination.classList.add('hidden');
+        return;
+      }
+      const endIndex = startIndex + showing;
+      dom.bookmarkPagination.classList.remove('hidden');
+      if (dom.paginationInfo) {
+        dom.paginationInfo.textContent = `Page ${state.pagination.page} of ${totalPages} · Showing ${startIndex + 1}-${endIndex} of ${total}`;
+      }
+      dom.prevPage.disabled = state.pagination.page === 1;
+      dom.nextPage.disabled = state.pagination.page === totalPages;
+    }
+
+    function changePage(delta) {
+      const filtered = getFilteredBookmarks();
+      const totalPages = Math.max(1, Math.ceil(Math.max(filtered.length, 1) / state.pagination.perPage));
+      const target = Math.min(totalPages, Math.max(1, state.pagination.page + delta));
+      if (target === state.pagination.page) return;
+      state.pagination.page = target;
+      renderBookmarkGrid(filtered);
+    }
+
+    function resetPagination() {
+      state.pagination.page = 1;
     }
 
     function renderSnippetList(bookmarks) {
+      if (!dom.snippetList) return;
+      const snippets = bookmarks.filter((bookmark) => (bookmark.textSnippet || '').trim());
       dom.snippetList.innerHTML = '';
-      const snippets = bookmarks.filter((bookmark) => bookmark.textSnippet);
       if (!snippets.length) {
         dom.snippetEmpty.classList.remove('hidden');
         return;
       }
       dom.snippetEmpty.classList.add('hidden');
-      snippets.forEach((bookmark) => {
-        const siteName = bookmark.siteName || extractSiteName(bookmark.url);
+      snippets.forEach((bookmark, index) => {
         const card = document.createElement('article');
         card.className = 'snippet-card';
         card.innerHTML = `
-          <div class="flex items-center justify-between text-xs text-slate-500">
-            <span class="uppercase">${bookmark.folder}</span>
-            <span>${siteName}</span>
+          <div class="flex items-center justify-between text-xs uppercase tracking-wide text-slate-500">
+            <span>Snippet #${index + 1}</span>
+            <span>${bookmark.folder}</span>
           </div>
-          <p class="font-semibold text-slate-800 dark:text-white">${bookmark.textTitle || bookmark.title || 'Untitled snippet'}</p>
-          <p class="text-sm text-slate-600 whitespace-pre-wrap">${bookmark.textSnippet}</p>
-          <button class="self-start rounded-2xl border border-slate-200 px-3 py-1 text-xs font-medium" data-action="copy-snippet">Copy snippet</button>
+          <h4 class="font-semibold">${bookmark.textTitle || bookmark.title || 'Untitled snippet'}</h4>
+          <p class="text-sm text-slate-600 dark:text-slate-200 whitespace-pre-wrap">${bookmark.textSnippet}</p>
         `;
-        card.querySelector('[data-action="copy-snippet"]').addEventListener('click', () => copyText(bookmark.textSnippet));
         dom.snippetList.appendChild(card);
       });
     }
 
     function renderImageGrid(bookmarks) {
-      dom.imageGrid.innerHTML = '';
+      if (!dom.imageGrid) return;
       const images = bookmarks.filter((bookmark) => bookmark.imageData || bookmark.imageUrl);
+      dom.imageGrid.innerHTML = '';
       if (!images.length) {
         dom.imageEmpty.classList.remove('hidden');
         return;
       }
       dom.imageEmpty.classList.add('hidden');
-      images.forEach((bookmark) => {
-        const siteName = bookmark.siteName || extractSiteName(bookmark.url);
-        const imageSource = bookmark.imageData || bookmark.imageUrl;
+      images.forEach((bookmark, index) => {
         const card = document.createElement('article');
         card.className = 'image-card';
+        const imgSrc = bookmark.imageData || bookmark.imageUrl;
         card.innerHTML = `
-          <img src="${imageSource}" alt="Stored reference image for ${bookmark.imageTitle || bookmark.title || 'bookmark'}" loading="lazy">
-          <div class="flex items-center justify-between text-xs text-slate-500">
-            <span class="uppercase">${bookmark.folder}</span>
-            <span>${siteName}</span>
+          <div class="flex items-center justify-between text-xs uppercase tracking-wide text-slate-500">
+            <span>Image #${index + 1}</span>
+            <span>${bookmark.folder}</span>
           </div>
-          <p class="font-semibold text-sm text-slate-800 dark:text-white">${bookmark.imageTitle || bookmark.title || 'Untitled image'}</p>
-          <button class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-medium self-start" data-action="view-image">Open image</button>
+          <h4 class="font-semibold">${bookmark.imageTitle || bookmark.title || 'Reference image'}</h4>
+          ${imgSrc ? `<img src="${imgSrc}" alt="${bookmark.imageTitle || 'Reference image'}">` : ''}
         `;
-        card.querySelector('[data-action="view-image"]').addEventListener('click', () => openImage(imageSource));
         dom.imageGrid.appendChild(card);
       });
     }
 
     function renderThumbnail(bookmark) {
-      const preview = bookmark.thumbnail || getSitePreview(bookmark.url);
-      if (preview) {
-        return `<img class="bookmark-thumb" src="${preview}" alt="Preview for ${bookmark.title || bookmark.url}" loading="lazy" onerror="this.onerror=null;this.src='https://s.wordpress.com/mshots/v1/${encodeURIComponent('https://example.com')}?w=800';">`;
+      const previewSource = bookmark.imageData || bookmark.thumbnail || bookmark.imageUrl;
+      if (!previewSource) {
+        return '<div class="bookmark-thumb flex items-center justify-center text-xs text-slate-500">No preview</div>';
       }
-      return `<div class="bookmark-thumb flex items-center justify-center text-xl bg-slate-200">📎</div>`;
+      return `<img src="${previewSource}" alt="${bookmark.title || 'preview'}" class="bookmark-thumb">`;
     }
 
     function renderTags(tags = []) {
       if (!tags.length) return '';
-      return `<div class="flex flex-wrap gap-1">${tags.map((tag) => `<span class="text-xs px-2 py-1 rounded-xl bg-slate-900/5 text-slate-600">${tag}</span>`).join('')}</div>`;
+      return `<div class="flex flex-wrap gap-2 text-xs">${tags.map((tag) => `<span class="px-2 py-1 rounded-full bg-slate-100 dark:bg-white/10">${tag}</span>`).join('')}</div>`;
     }
 
     function renderNotes(notes) {
       if (!notes) return '';
-      return `<p class="text-sm text-slate-600">${notes}</p>`;
+      return `<p class="text-sm text-slate-600 dark:text-slate-200">${notes}</p>`;
     }
 
     function copyLink(url) {
-      navigator.clipboard.writeText(url)
-        .then(() => {
-          toast('Link copied');
-        })
-        .catch(() => alert('Copy failed.'));
-    }
-
-    function copyText(text) {
-      navigator.clipboard.writeText(text)
-        .then(() => toast('Snippet copied'))
-        .catch(() => alert('Copy failed.'));
-    }
-
-    function openImage(source) {
-      const link = document.createElement('a');
-      link.href = source;
-      link.target = '_blank';
-      link.rel = 'noopener';
-      link.click();
+      if (!navigator.clipboard) {
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+        toast('Link copied');
+        return;
+      }
+      navigator.clipboard.writeText(url).then(() => toast('Link copied')).catch(() => {
+        alert('Unable to copy link');
+      });
     }
 
     function deleteBookmark(id) {
@@ -1175,188 +1331,206 @@
       state.bookmarks = state.bookmarks.filter((bookmark) => bookmark.id !== id);
       persistState();
       renderAll();
+      toast('Bookmark removed');
     }
 
-    function toast(message) {
-      const el = document.createElement('div');
-      el.textContent = message;
-      el.className = 'fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2 rounded-2xl shadow-lg z-50';
-      document.body.appendChild(el);
-      setTimeout(() => {
-        el.remove();
-      }, 1800);
+    function updateSearchSuggestions() {
+      if (!dom.searchSuggestions) return;
+      const suggestions = new Set();
+      state.bookmarks.forEach((bookmark) => {
+        [bookmark.title, bookmark.siteName, bookmark.folder, bookmark.platform, ...(bookmark.tags || []), bookmark.textTitle, bookmark.imageTitle]
+          .filter(Boolean)
+          .forEach((value) => suggestions.add(value));
+      });
+      state.suggestionBank = Array.from(suggestions);
+      dom.searchSuggestions.innerHTML = '';
+      state.suggestionBank.slice(0, 20).forEach((value) => {
+        const option = document.createElement('option');
+        option.value = value;
+        dom.searchSuggestions.appendChild(option);
+      });
     }
 
-    function toggleTheme() {
-      const idx = THEME_SEQUENCE.indexOf(state.theme);
-      const next = (idx + 1) % THEME_SEQUENCE.length;
-      state.theme = THEME_SEQUENCE[next];
-      applyTheme();
-      persistState();
-    }
-
-    function applyTheme() {
-      document.body.setAttribute('data-theme', state.theme);
-      dom.themeToggle.textContent = `Theme: ${state.theme.charAt(0).toUpperCase() + state.theme.slice(1)}`;
-    }
-
-    function exportData() {
-      const payload = JSON.stringify({ bookmarks: state.bookmarks }, null, 2);
-      const blob = new Blob([payload], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'bookmark-vault.json';
-      link.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function importData(event) {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const parsed = JSON.parse(reader.result);
-          state.bookmarks = Array.isArray(parsed) ? parsed : parsed.bookmarks || [];
-          hydrateLegacyBookmarks();
-          persistState();
-          renderAll();
-          toast('Imported successfully');
-        } catch (err) {
-          alert('Import failed: invalid JSON');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function updateGithubField(field, value) {
-      state.github[field] = value;
-      persistState();
-    }
-
-    async function pushToGithub() {
-      const { owner, repo, path, token } = state.github;
-      if (!owner || !repo || !path || !token) {
-        alert('Fill GitHub fields first.');
+    function renderAutocompleteSuggestions(query) {
+      if (!dom.searchAutocomplete) return;
+      if (!query) {
+        hideAutocomplete();
         return;
       }
-      setGithubStatus('Pushing to GitHub...');
-      try {
-        const api = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-        let sha;
-        const head = await fetch(api, { headers: authHeader(token) });
-        if (head.ok) {
-          const existing = await head.json();
-          sha = existing.sha;
-        }
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify({ bookmarks: state.bookmarks }, null, 2))));
-        const response = await fetch(api, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...authHeader(token)
-          },
-          body: JSON.stringify({
-            message: 'Update bookmarks from Mani\'s vault',
-            content,
-            sha
-          })
+      const matches = state.suggestionBank
+        .filter((value) => value && value.toLowerCase().includes(query))
+        .slice(0, 6);
+      if (!matches.length) {
+        hideAutocomplete();
+        return;
+      }
+      dom.searchAutocomplete.innerHTML = matches.map((match) => `<button type="button" class="autocomplete-item text-left w-full">${match}</button>`).join('');
+      Array.from(dom.searchAutocomplete.children).forEach((btn) => {
+        btn.addEventListener('click', () => {
+          dom.searchInput.value = btn.textContent;
+          state.filters.search = btn.textContent.toLowerCase();
+          hideAutocomplete();
+          resetPagination();
+          renderBookmarkViews();
         });
-        if (!response.ok) throw new Error('Push failed');
-        setGithubStatus('Synced to GitHub ✔');
-      } catch (err) {
-        console.error(err);
-        setGithubStatus('GitHub push failed. Check console.');
-      }
+      });
+      dom.searchAutocomplete.classList.remove('hidden');
     }
 
-    async function pullFromGithub() {
-      const { owner, repo, path, token } = state.github;
-      if (!owner || !repo || !path || !token) {
-        alert('Fill GitHub fields first.');
+    function hideAutocomplete() {
+      if (!dom.searchAutocomplete) return;
+      dom.searchAutocomplete.classList.add('hidden');
+      dom.searchAutocomplete.innerHTML = '';
+    }
+
+    function promptClipboardCapture({ force = false, manual = false } = {}) {
+      if (!navigator.clipboard?.readText) {
+        if (manual) alert('Clipboard API unavailable in this browser.');
         return;
       }
-      setGithubStatus('Pulling from GitHub...');
-      try {
-        const api = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-        const response = await fetch(api, { headers: authHeader(token) });
-        if (!response.ok) throw new Error('File not found');
-        const data = await response.json();
-        const decoded = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
-        const parsed = JSON.parse(decoded);
-        state.bookmarks = parsed.bookmarks || parsed;
-        hydrateLegacyBookmarks();
-        persistState();
-        renderAll();
-        setGithubStatus('Pulled latest data ✔');
-      } catch (err) {
-        console.error(err);
-        setGithubStatus('GitHub pull failed.');
+      if (clipboardCooldown && !force) return;
+      clipboardCooldown = true;
+      setTimeout(() => { clipboardCooldown = false; }, 3500);
+      navigator.clipboard.readText().then((text) => {
+        if (!text) {
+          if (manual) toast('Clipboard empty');
+          return;
+        }
+        if (!force && text === clipboardBuffer) return;
+        clipboardBuffer = text;
+        clipboardState.text = text;
+        showClipboardModal(text);
+      }).catch((err) => {
+        if (manual) alert('Clipboard permission denied.');
+        console.warn('Clipboard read failed', err);
+      });
+    }
+
+    function showClipboardModal(text) {
+      if (!dom.clipboardModal) return;
+      dom.clipboardPreview.textContent = text;
+      dom.clipboardModal.classList.remove('hidden');
+      dom.body.classList.add('modal-open');
+    }
+
+    function hideClipboardModal() {
+      dom.clipboardModal.classList.add('hidden');
+      dom.body.classList.remove('modal-open');
+    }
+
+    function setupClipboardModal() {
+      if (!dom.clipboardModal) return;
+      dom.clipboardModal.addEventListener('click', (event) => {
+        if (event.target === dom.clipboardModal) {
+          hideClipboardModal();
+        }
+      });
+      dom.clipboardModal.querySelector('[data-clip-dismiss]').addEventListener('click', hideClipboardModal);
+      dom.clipboardModal.querySelectorAll('[data-clip-action]').forEach((button) => {
+        button.addEventListener('click', () => {
+          handleClipboardAction(button.dataset.clipAction);
+        });
+      });
+    }
+
+    function handleClipboardAction(action) {
+      const text = clipboardState.text;
+      if (!text) {
+        hideClipboardModal();
+        return;
       }
+      if (action === 'bookmark') {
+        const url = extractFirstUrl(text);
+        if (url) {
+          dom.form.elements.url.value = url;
+        }
+        dom.form.elements.notes.value = text;
+        toast('Clipboard dropped into bookmark form');
+      } else if (action === 'text') {
+        dom.form.elements.textSnippet.value = text;
+        if (!dom.form.elements.textTitle.value) {
+          dom.form.elements.textTitle.value = `Snippet ${new Date().toLocaleTimeString()}`;
+        }
+        toast('Clipboard saved as snippet');
+      } else if (action === 'image') {
+        const url = extractFirstUrl(text);
+        if (url) {
+          dom.form.elements.imageUrl.value = url;
+          toast('Clipboard URL set as image reference');
+        } else {
+          toast('No image URL detected, pasted into notes instead');
+          dom.form.elements.notes.value = text;
+        }
+      }
+      hideClipboardModal();
+      scrollToForm();
     }
 
-    function authHeader(token) {
-      return { Authorization: `Bearer ${token}` };
-    }
-
-    function setGithubStatus(message) {
-      dom.githubStatus.textContent = `Status: ${message}`;
+    function extractFirstUrl(text) {
+      if (!text) return '';
+      const match = text.match(/https?:\/\/[^\s]+/i);
+      return match ? match[0] : '';
     }
 
     function prefillFromShareTarget() {
-      const params = new URLSearchParams(window.location.search);
-      const sharedUrl = params.get('sharedUrl');
-      const sharedTitle = params.get('sharedTitle');
-      const sharedText = params.get('sharedText');
-      if (sharedUrl) dom.urlInput.value = sharedUrl;
-      if (sharedTitle) dom.form.elements['title'].value = sharedTitle;
-      if (sharedText) dom.form.elements['textSnippet'].value = sharedText;
-      if (sharedText) dom.form.elements['textTitle'].value = sharedTitle || 'Shared text';
-      if (sharedUrl || sharedText) {
+      const params = new URLSearchParams(location.search);
+      const payload = {
+        url: params.get('sharedUrl') || params.get('url'),
+        title: params.get('sharedTitle') || params.get('title'),
+        text: params.get('sharedText') || params.get('text')
+      };
+      if (payload.url || payload.title || payload.text) {
+        applySharePayload(payload);
+        history.replaceState({}, document.title, location.pathname);
+      }
+    }
+
+    function applySharePayload({ url, title, text }) {
+      if (url) dom.form.elements.url.value = url;
+      if (title) dom.form.elements.title.value = title;
+      if (text) {
+        dom.form.elements.notes.value = text;
+        dom.form.elements.textSnippet.value = text;
+        dom.form.elements.textTitle.value = dom.form.elements.textTitle.value || (title || 'Shared text');
+      }
+      if (url || text || title) {
+        toast('Share data captured');
         scrollToForm();
-        toast('Share captured — finish the form to save.');
       }
     }
 
-    function getSitePreview(url) {
-      try {
-        if (!url) return '';
-        return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=400`;
-      } catch (err) {
-        return '';
-      }
-    }
-
-    function extractSiteName(url) {
-      try {
-        if (!url) return 'no-link';
-        const { hostname } = new URL(url);
-        return hostname.replace(/^www\./, '');
-      } catch (err) {
-        return 'website';
-      }
+    function setupShareTargetListener() {
+      if (!('launchQueue' in window) || !window.launchQueue?.setConsumer) return;
+      window.launchQueue.setConsumer(async (launchParams) => {
+        if (!launchParams.files || !launchParams.files.length) return;
+        for (const fileHandle of launchParams.files) {
+          const file = await fileHandle.getFile();
+          if (file.type.startsWith('text/')) {
+            const text = await file.text();
+            applySharePayload({ text, title: file.name });
+          } else if (file.type.startsWith('image/')) {
+            const data = await fileToBase64(file);
+            sharedImageAttachment = { data, name: file.name };
+            dom.form.elements.imageTitle.value = dom.form.elements.imageTitle.value || file.name;
+            toast('Shared image ready to attach — just hit save');
+            scrollToForm();
+          }
+        }
+      });
     }
 
     function setupManifest() {
       const manifest = {
         name: "Mani's Bookmark Vault",
         short_name: 'Bookmark Vault',
-        start_url: './',
+        start_url: '.',
         display: 'standalone',
-        background_color: '#0f172a',
         theme_color: '#ffca3a',
-        icons: [
-          {
-            src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="25" fill="%230f172a"/><path d="M25 25h50v50L50 60 25 75Z" fill="%23ffca3a"/></svg>',
-            sizes: '256x256',
-            type: 'image/svg+xml'
-          }
-        ],
+        background_color: '#ffffff',
+        icons: [],
         share_target: {
-          action: './',
+          action: '/',
           method: 'GET',
-          enctype: 'application/x-www-form-urlencoded',
           params: {
             title: 'sharedTitle',
             text: 'sharedText',
@@ -1364,123 +1538,171 @@
           }
         }
       };
-      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('link');
-      link.rel = 'manifest';
-      link.href = url;
-      document.head.appendChild(link);
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      const manifestURL = URL.createObjectURL(blob);
+      let link = document.querySelector('link[rel="manifest"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'manifest';
+        document.head.appendChild(link);
+      }
+      link.href = manifestURL;
     }
 
     function setupServiceWorker() {
       if (!('serviceWorker' in navigator)) return;
-      const swCode = `const CACHE_NAME='bookmark-vault-cache-v1';\n      const ASSETS=['./'];\n      self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});\n      self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))));self.clients.claim();});\n      self.addEventListener('fetch',event=>{event.respondWith(caches.match(event.request).then(response=>response||fetch(event.request)));});`;
+      const swCode = `self.addEventListener('install', (event) => {self.skipWaiting();});self.addEventListener('activate', (event) => {event.waitUntil(self.clients.claim());});self.addEventListener('fetch', () => {});`;
       const blob = new Blob([swCode], { type: 'text/javascript' });
       const swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl).catch(console.error);
+      navigator.serviceWorker.register(swUrl).catch((err) => console.warn('SW registration failed', err));
     }
 
-    function setupClipboardModal() {
-      if (!dom.clipboardModal) return;
-      dom.clipboardModal.querySelectorAll('[data-clip-action]').forEach((button) => {
-        button.addEventListener('click', handleClipboardDecision);
+    function handleGithubStatus(message) {
+      dom.githubStatus.textContent = `Status: ${message}`;
+    }
+
+    function updateGithubField(field, value) {
+      state.github[field] = value;
+      persistState();
+    }
+
+    async function pullFromGithub() {
+      const { owner, repo, path, token } = state.github;
+      if (!owner || !repo || !path) {
+        alert('Fill owner, repo, and path first.');
+        return;
+      }
+      handleGithubStatus('Pulling...');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      try {
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers });
+        if (!res.ok) throw new Error('GitHub pull failed');
+        const data = await res.json();
+        const decoded = atob((data.content || '').replace(/\n/g, ''));
+        const parsed = JSON.parse(decoded);
+        state.bookmarks = parsed.bookmarks || parsed;
+        state.github.sha = data.sha;
+        persistState();
+        renderAll();
+        handleGithubStatus('Pulled successfully');
+        toast('Pulled from GitHub');
+      } catch (err) {
+        console.error(err);
+        handleGithubStatus('Pull failed');
+        alert('Unable to pull from GitHub.');
+      }
+    }
+
+    async function pushToGithub() {
+      const { owner, repo, path, token, sha } = state.github;
+      if (!owner || !repo || !path || !token) {
+        alert('Fill owner, repo, path, and token to push.');
+        return;
+      }
+      handleGithubStatus('Pushing...');
+      const payload = {
+        message: 'Update bookmark vault',
+        content: btoa(unescape(encodeURIComponent(JSON.stringify({ bookmarks: state.bookmarks, updatedAt: new Date().toISOString() }, null, 2)))),
+        sha: sha || undefined
+      };
+      try {
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('GitHub push failed');
+        const data = await res.json();
+        state.github.sha = data.content?.sha || state.github.sha;
+        persistState();
+        handleGithubStatus('Pushed successfully');
+        toast('Pushed to GitHub');
+      } catch (err) {
+        console.error(err);
+        handleGithubStatus('Push failed');
+        alert('Unable to push to GitHub.');
+      }
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify({ bookmarks: state.bookmarks, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bookmark-vault.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast('Exported JSON');
+    }
+
+    function importData(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      file.text().then((text) => {
+        try {
+          const parsed = JSON.parse(text);
+          state.bookmarks = parsed.bookmarks || parsed;
+          persistState();
+          renderAll();
+          toast('Import complete');
+        } catch (err) {
+          alert('Invalid JSON file.');
+        }
+      }).finally(() => {
+        dom.importInput.value = '';
       });
-      const dismiss = dom.clipboardModal.querySelector('[data-clip-dismiss]');
-      if (dismiss) dismiss.addEventListener('click', hideClipboardModal);
-      dom.clipboardModal.addEventListener('click', (event) => {
-        if (event.target === dom.clipboardModal) hideClipboardModal();
-      });
-    }
-
-    async function promptClipboardCapture() {
-      if (!navigator.clipboard?.readText) return;
-      try {
-        const permission = await navigator.permissions?.query({ name: 'clipboard-read' });
-        if (permission && permission.state === 'denied') return;
-      } catch (err) {
-        console.warn('Clipboard permission query failed', err);
-      }
-      try {
-        const text = (await navigator.clipboard.readText()).trim();
-        if (!text) return;
-        const last = sessionStorage.getItem('lastClipboardPrompt');
-        if (last === text) return;
-        clipboardBuffer = text;
-        dom.clipboardPreview.textContent = text.length > 400 ? `${text.slice(0, 400)}…` : text;
-        dom.clipboardModal.classList.remove('hidden');
-        document.body.classList.add('modal-open');
-      } catch (err) {
-        console.warn('Clipboard read blocked', err);
-      }
-    }
-
-    function hideClipboardModal() {
-      dom.clipboardModal.classList.add('hidden');
-      document.body.classList.remove('modal-open');
-      if (clipboardBuffer) sessionStorage.setItem('lastClipboardPrompt', clipboardBuffer);
-    }
-
-    function handleClipboardDecision(event) {
-      const action = event.currentTarget.dataset.clipAction;
-      if (!clipboardBuffer) return;
-      if (action === 'bookmark') {
-        if (!isLikelyUrl(clipboardBuffer)) {
-          alert('Clipboard item is not a URL. Try saving as text or image.');
-          return;
-        }
-        dom.urlInput.value = clipboardBuffer;
-        scrollToForm();
-        toast('Clipboard link moved to the form.');
-      }
-      if (action === 'text') {
-        dom.form.elements['textSnippet'].value = clipboardBuffer;
-        if (!dom.form.elements['textTitle'].value) {
-          dom.form.elements['textTitle'].value = generateClipboardTitle('Text');
-        }
-        scrollToForm();
-        toast('Clipboard text captured.');
-      }
-      if (action === 'image') {
-        if (!isImageish(clipboardBuffer)) {
-          alert('Clipboard link does not look like an image URL.');
-          return;
-        }
-        dom.form.elements['imageUrl'].value = clipboardBuffer;
-        if (!dom.form.elements['imageTitle'].value) {
-          dom.form.elements['imageTitle'].value = generateClipboardTitle('Image');
-        }
-        scrollToForm();
-        toast('Clipboard image URL captured.');
-      }
-      hideClipboardModal();
-    }
-
-    function isLikelyUrl(value) {
-      if (!value) return false;
-      try {
-        new URL(value);
-        return true;
-      } catch (err) {
-        return /^https?:\/\//i.test(value);
-      }
-    }
-
-    function isImageish(value) {
-      if (!value) return false;
-      if (/^data:image\//.test(value)) return true;
-      return /(\.png|\.jpe?g|\.gif|\.webp|\.svg)$/i.test(value.split('?')[0]);
-    }
-
-    function generateClipboardTitle(prefix) {
-      const preview = clipboardBuffer.length > 18 ? `${clipboardBuffer.slice(0, 18)}…` : clipboardBuffer;
-      return `${prefix} · ${preview || new Date().toLocaleTimeString()}`;
     }
 
     function scrollToForm() {
       dom.form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    init();
+    function applyTheme() {
+      dom.body.setAttribute('data-theme', state.theme);
+      const label = state.theme.charAt(0).toUpperCase() + state.theme.slice(1);
+      dom.themeToggle.textContent = `Theme: ${label}`;
+    }
+
+    function toggleTheme() {
+      const currentIndex = THEME_SEQUENCE.indexOf(state.theme);
+      const nextIndex = (currentIndex + 1) % THEME_SEQUENCE.length;
+      state.theme = THEME_SEQUENCE[nextIndex];
+      persistState();
+      applyTheme();
+    }
+
+    function getSitePreview(url) {
+      if (!url) return '';
+      try {
+        const { hostname } = new URL(url);
+        return `https://www.google.com/s2/favicons?sz=64&domain=${hostname}`;
+      } catch (err) {
+        return '';
+      }
+    }
+
+    function extractSiteName(url) {
+      if (!url) return '';
+      try {
+        const { hostname } = new URL(url);
+        return hostname.replace('www.', '');
+      } catch (err) {
+        return '';
+      }
+    }
+
+    function toast(message) {
+      if (!dom.toast) return;
+      dom.toast.textContent = message;
+      dom.toast.classList.add('visible');
+      clearTimeout(dom.toast._timeout);
+      dom.toast._timeout = setTimeout(() => dom.toast.classList.remove('visible'), 2200);
+    }
   </script>
 </body>
 </html>
