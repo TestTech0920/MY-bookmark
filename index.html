@@ -9,14 +9,18 @@
   <meta name="theme-color" content="#ffca3a">
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=General+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap');
     :root {
       color-scheme: light;
     }
+    * {
+      font-family: "General Sans", "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
     body {
-      font-family: "Inter", "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
       background: radial-gradient(circle at top, #fff7d6 0%, #ffe7c6 35%, #f7f0ff 70%, #dbe8ff 100%);
       transition: background 0.5s ease, color 0.5s ease;
+      color: #0f172a;
     }
     body[data-theme="midnight"] {
       background: radial-gradient(circle at top, #090915 0%, #111327 45%, #0b132b 100%);
@@ -25,7 +29,7 @@
     body[data-theme="neon"] {
       background: radial-gradient(circle at top, #030014 0%, #10002b 40%, #240046 70%, #36005c 100%);
       color: #f3f6ff;
-      text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.08);
     }
     body[data-theme="glass"] {
       background: linear-gradient(135deg, #e8f0ff 0%, #fef6ff 35%, #e9fffb 65%, #fefde1 100%);
@@ -34,9 +38,23 @@
     body.modal-open {
       overflow: hidden;
     }
+    input, select, textarea {
+      color: inherit;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    body[data-theme="midnight"] input,
+    body[data-theme="midnight"] select,
+    body[data-theme="midnight"] textarea,
+    body[data-theme="neon"] input,
+    body[data-theme="neon"] select,
+    body[data-theme="neon"] textarea {
+      background: rgba(8, 10, 24, 0.65);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #f5f7ff;
+    }
     .glass-panel {
-      background: rgba(255, 255, 255, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.35);
       backdrop-filter: blur(18px);
       box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
     }
@@ -55,6 +73,12 @@
       border-color: rgba(15, 23, 42, 0.08);
       box-shadow: 0 30px 70px rgba(15, 23, 42, 0.08);
     }
+    header .actions button {
+      transition: transform 0.2s ease;
+    }
+    header .actions button:hover {
+      transform: translateY(-1px);
+    }
     .badge {
       display: inline-flex;
       align-items: center;
@@ -68,9 +92,8 @@
     }
     body[data-theme="midnight"] .badge,
     body[data-theme="neon"] .badge {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.1);
       color: #f5f5f5;
-      border-color: rgba(255, 255, 255, 0.08);
     }
     .platform-chip {
       cursor: pointer;
@@ -106,17 +129,22 @@
       background: rgba(9, 13, 29, 0.95);
     }
     .bookmark-thumb {
-      width: 100%;
+      width: 84px;
+      height: 84px;
       border-radius: 18px;
-      aspect-ratio: 16 / 9;
       object-fit: cover;
       background: #e8ecf5;
       border: 1px solid rgba(15, 23, 42, 0.08);
+      flex-shrink: 0;
     }
     body[data-theme="midnight"] .bookmark-thumb,
     body[data-theme="neon"] .bookmark-thumb {
       background: #1f2940;
       border-color: rgba(255, 255, 255, 0.05);
+    }
+    .bookmark-index {
+      font-weight: 600;
+      letter-spacing: 0.08em;
     }
     .section-header {
       display: flex;
@@ -126,25 +154,24 @@
       gap: 1rem;
     }
     .section-toggle {
+      width: 2.75rem;
+      height: 2.75rem;
       border-radius: 999px;
-      padding: 0.4rem 1.2rem;
-      border: 1px solid rgba(15, 23, 42, 0.1);
+      border: 1px solid rgba(15, 23, 42, 0.15);
       background: rgba(255, 255, 255, 0.8);
-      font-size: 0.85rem;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-    .toggle-icon {
-      width: 1.6rem;
-      height: 1.6rem;
-      border-radius: 999px;
-      border: 1px solid currentColor;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.9rem;
+      font-size: 1.1rem;
+    }
+    body[data-theme="midnight"] .section-toggle,
+    body[data-theme="neon"] .section-toggle {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      color: #f5f5f5;
+    }
+    .section-toggle .toggle-icon {
+      font-weight: 600;
     }
     .collapsible-body {
       margin-top: 1.5rem;
@@ -249,10 +276,40 @@
       color: #f5f7ff;
       border-color: rgba(255, 255, 255, 0.1);
     }
-    @media (max-width: 640px) {
-      header .actions {
-        flex-direction: column;
-        align-items: stretch;
+    #primaryWorkspace {
+      display: grid;
+      gap: 1.5rem;
+    }
+    @media (min-width: 1024px) {
+      #primaryWorkspace {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        align-items: start;
+      }
+    }
+    .bookmark-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #475569;
+    }
+    body[data-theme="midnight"] .bookmark-meta,
+    body[data-theme="neon"] .bookmark-meta {
+      color: #cbd5f5;
+    }
+    .bookmark-row {
+      display: flex;
+      gap: 1rem;
+    }
+    .quick-grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+    @media (min-width: 1024px) {
+      .quick-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
   </style>
@@ -264,10 +321,11 @@
         <div>
           <p class="badge">Clipboard smart-capture · Local JSON</p>
           <h1 class="text-3xl sm:text-4xl font-semibold text-slate-900 dark:text-white mt-2">Mani's Bookmark Vault</h1>
-          <p class="text-slate-700 dark:text-slate-200 max-w-2xl mt-2">Save anything you copy or share — links, notes, and reference images — categorize it instantly, and sync privately. Full thumbnails, folder rails, and dedicated tabs keep every medium neat.</p>
+          <p class="text-slate-700 dark:text-slate-200 max-w-2xl mt-2">Save anything you copy or share — links, notes, and reference images — categorize instantly, and sync privately. Full clipboard prompts, folder rails, and dedicated tabs keep every medium neat.</p>
         </div>
         <div class="actions flex flex-wrap items-center gap-3">
-          <button id="themeToggle" class="px-4 py-2 rounded-2xl border border-white/40 bg-white/70 text-slate-900 font-medium shadow-sm hover:translate-y-[-1px] transition">
+          <button id="saveEntryTop" class="px-4 py-2 rounded-2xl border border-white/60 bg-white/80 text-slate-900 font-medium shadow-sm">Save entry</button>
+          <button id="themeToggle" class="px-4 py-2 rounded-2xl border border-white/40 bg-white/70 text-slate-900 font-medium shadow-sm">
             Theme: Sunrise
           </button>
           <button id="installPwaBtn" class="px-4 py-2 rounded-2xl border border-amber-200 bg-amber-100 text-amber-900 font-medium shadow-sm disabled:opacity-50" disabled>
@@ -295,9 +353,8 @@
         </div>
         <div class="flex gap-3 items-center">
           <button id="clearFilters" class="text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white">Reset filters</button>
-          <button type="button" class="section-toggle" data-toggle>
+          <button type="button" class="section-toggle" data-toggle aria-label="Expand section">
             <span class="toggle-icon">+</span>
-            <span>Expand</span>
           </button>
         </div>
       </div>
@@ -306,20 +363,22 @@
       </div>
     </section>
 
-    <section class="grid gap-6 lg:grid-cols-3">
-      <section id="addBookmarkSection" class="glass-panel rounded-3xl p-5 lg:col-span-2" data-collapsible data-default-open>
+    <section id="primaryWorkspace">
+      <section id="addBookmarkSection" class="glass-panel rounded-3xl p-5" data-collapsible data-default-open>
         <div class="section-header">
           <div>
             <p class="text-xs uppercase tracking-wide text-slate-500">Auto-fetch thumbnails & metadata</p>
             <h2 class="text-xl font-semibold">Add bookmark</h2>
           </div>
-          <button type="button" class="section-toggle" data-toggle>
+          <button type="button" class="section-toggle" data-toggle aria-label="Collapse section">
             <span class="toggle-icon">−</span>
-            <span>Collapse</span>
           </button>
         </div>
         <div class="collapsible-body">
           <form id="bookmarkForm" class="space-y-4">
+            <div class="flex justify-end">
+              <button type="submit" class="rounded-2xl bg-slate-900 text-white px-5 py-2 text-sm font-semibold hover:bg-slate-800 transition">Save entry</button>
+            </div>
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="text-sm font-medium text-slate-600 dark:text-slate-200">Platform
                 <select name="platform" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 p-3 text-slate-900" required>
@@ -370,13 +429,50 @@
         </div>
       </section>
 
+      <section class="glass-panel rounded-3xl p-5" id="librarySection" data-collapsible data-default-open>
+        <div class="section-header">
+          <div>
+            <h2 class="text-xl font-semibold">Library</h2>
+            <p class="text-sm text-slate-500">Search filters bookmarks, snippets, and images simultaneously.</p>
+          </div>
+          <button type="button" class="section-toggle" data-toggle aria-label="Collapse section">
+            <span class="toggle-icon">−</span>
+          </button>
+        </div>
+        <div class="collapsible-body space-y-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm text-slate-500">Type anything to filter site names, tags, notes, snippets, or image titles.</p>
+            <input id="searchInput" type="search" placeholder="Search bookmarks · text · images" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 w-full sm:w-72">
+          </div>
+          <div class="library-tabs" id="libraryTabs">
+            <button type="button" class="active" data-library-tab="bookmarks">Bookmarks</button>
+            <button type="button" data-library-tab="snippets">Text snippets</button>
+            <button type="button" data-library-tab="images">Reference images</button>
+          </div>
+          <div class="library-panel" data-tab-panel="bookmarks">
+            <div id="bookmarkGrid" class="grid gap-4">
+            </div>
+            <p id="emptyState" class="text-center text-sm text-slate-500 hidden">Start saving! Your bookmarks will appear here.</p>
+          </div>
+          <div class="library-panel hidden" data-tab-panel="snippets">
+            <div id="snippetList" class="space-y-3"></div>
+            <p id="snippetEmpty" class="text-center text-sm text-slate-500">No text snippets captured yet.</p>
+          </div>
+          <div class="library-panel hidden" data-tab-panel="images">
+            <div id="imageGrid" class="grid gap-4 sm:grid-cols-2"></div>
+            <p id="imageEmpty" class="text-center text-sm text-slate-500">No reference images stored yet.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <div class="quick-grid">
       <div class="space-y-4">
         <section id="quickActionsSection" class="glass-panel rounded-3xl p-5" data-collapsible>
           <div class="section-header">
             <h3 class="font-semibold">Quick actions</h3>
-            <button type="button" class="section-toggle" data-toggle>
+            <button type="button" class="section-toggle" data-toggle aria-label="Expand section">
               <span class="toggle-icon">+</span>
-              <span>Expand</span>
             </button>
           </div>
           <div class="collapsible-body space-y-3">
@@ -400,9 +496,8 @@
               <h3 class="font-semibold">Folders</h3>
               <span id="folderCount" class="text-xs text-slate-500">0 folders</span>
             </div>
-            <button type="button" class="section-toggle" data-toggle>
+            <button type="button" class="section-toggle" data-toggle aria-label="Expand section">
               <span class="toggle-icon">+</span>
-              <span>Expand</span>
             </button>
           </div>
           <div class="collapsible-body">
@@ -410,109 +505,70 @@
           </div>
         </section>
       </div>
-    </section>
 
-    <section class="glass-panel rounded-3xl p-5" id="librarySection" data-collapsible data-default-open>
-      <div class="section-header">
-        <div>
-          <h2 class="text-xl font-semibold">Library</h2>
-          <p class="text-sm text-slate-500">Search works across bookmarks, snippets, and images simultaneously.</p>
+      <section id="syncHub" class="glass-panel rounded-3xl p-5 lg:col-span-2" data-collapsible>
+        <div class="section-header">
+          <div>
+            <h2 class="text-xl font-semibold">GitHub Sync & Private vaults</h2>
+            <p class="text-sm text-slate-500">Sync your JSON archive to GitHub (supports private repositories with a token that has <code>repo</code> scope).</p>
+          </div>
+          <button type="button" class="section-toggle" data-toggle aria-label="Expand section">
+            <span class="toggle-icon">+</span>
+          </button>
         </div>
-        <button type="button" class="section-toggle" data-toggle>
-          <span class="toggle-icon">−</span>
-          <span>Collapse</span>
-        </button>
-      </div>
-      <div class="collapsible-body space-y-4">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p class="text-sm text-slate-500">Type anything to filter every tab.</p>
-          <input id="searchInput" type="search" placeholder="Search links, notes, or image titles" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 w-full sm:w-72">
+        <div class="collapsible-body space-y-4">
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <input id="githubOwner" placeholder="Owner / Org" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
+            <input id="githubRepo" placeholder="Repository" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
+            <input id="githubPath" placeholder="Path e.g. data/bookmarks.json" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
+            <input id="githubToken" type="password" placeholder="Personal Access Token" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <button id="pullGithub" class="flex-1 rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 font-medium">Pull from GitHub</button>
+            <button id="pushGithub" class="flex-1 rounded-2xl bg-slate-900 text-white px-4 py-2 font-semibold">Push to GitHub</button>
+          </div>
+          <p id="githubStatus" class="text-sm text-slate-500">Status: idle</p>
         </div>
-        <div class="library-tabs" id="libraryTabs">
-          <button type="button" class="active" data-library-tab="bookmarks">Bookmarks</button>
-          <button type="button" data-library-tab="snippets">Text snippets</button>
-          <button type="button" data-library-tab="images">Reference images</button>
-        </div>
-        <div class="library-panel" data-tab-panel="bookmarks">
-          <div id="bookmarkGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
-          <p id="emptyState" class="text-center text-sm text-slate-500 hidden">Start saving! Your bookmarks will appear here.</p>
-        </div>
-        <div class="library-panel hidden" data-tab-panel="snippets">
-          <div id="snippetList" class="space-y-3"></div>
-          <p id="snippetEmpty" class="text-center text-sm text-slate-500">No text snippets captured yet.</p>
-        </div>
-        <div class="library-panel hidden" data-tab-panel="images">
-          <div id="imageGrid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
-          <p id="imageEmpty" class="text-center text-sm text-slate-500">No reference images stored yet.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="syncHub" class="glass-panel rounded-3xl p-5" data-collapsible>
-      <div class="section-header">
-        <div>
-          <h2 class="text-xl font-semibold">GitHub Sync & Private vaults</h2>
-          <p class="text-sm text-slate-500">Sync your JSON archive to GitHub (supports private repositories with a token that has <code>repo</code> scope).</p>
-        </div>
-        <button type="button" class="section-toggle" data-toggle>
-          <span class="toggle-icon">+</span>
-          <span>Expand</span>
-        </button>
-      </div>
-      <div class="collapsible-body space-y-4">
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <input id="githubOwner" placeholder="Owner / Org" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
-          <input id="githubRepo" placeholder="Repository" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
-          <input id="githubPath" placeholder="Path e.g. data/bookmarks.json" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
-          <input id="githubToken" type="password" placeholder="Personal Access Token" class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-2">
-        </div>
-        <div class="flex flex-wrap gap-3">
-          <button id="pullGithub" class="flex-1 rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 font-medium">Pull from GitHub</button>
-          <button id="pushGithub" class="flex-1 rounded-2xl bg-slate-900 text-white px-4 py-2 font-semibold">Push to GitHub</button>
-        </div>
-        <p id="githubStatus" class="text-sm text-slate-500">Status: idle</p>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <section class="glass-panel rounded-3xl p-5 space-y-6" data-collapsible>
       <div class="section-header">
         <h2 class="text-xl font-semibold">Deployment, Sync & Cross-app sharing guide</h2>
-        <button type="button" class="section-toggle" data-toggle>
+        <button type="button" class="section-toggle" data-toggle aria-label="Expand section">
           <span class="toggle-icon">+</span>
-          <span>Expand</span>
         </button>
       </div>
       <div class="collapsible-body space-y-6 text-sm text-slate-600 dark:text-slate-200">
         <div class="grid gap-4 md:grid-cols-2">
           <div class="rounded-2xl border border-slate-200/60 p-4 space-y-2">
-            <h3 class="font-semibold">GitHub Pages deployment — step by step</h3>
+            <h3 class="font-semibold">GitHub Pages deployment — detailed</h3>
             <ol class="list-decimal list-inside space-y-1">
-              <li><strong>Repo setup:</strong> create a new GitHub repo (public or private) and add this <code>index.html</code>. Commit + push.</li>
-              <li><strong>Enable Pages:</strong> Settings → Pages → Build & deployment → select <em>Deploy from branch</em>, pick <code>main</code>, folder <code>/</code>, and hit Save.</li>
-              <li><strong>Wait & verify:</strong> GitHub builds in ~1 min. Visit the URL displayed in the Pages panel to ensure the PWA loads.</li>
-              <li><strong>Optional assets:</strong> create <code>data/bookmarks.json</code> (exported from the app) so first-time visitors load pre-filled data.</li>
-              <li><strong>Install prompt:</strong> once opened over HTTPS, Chrome/Edge/Firefox will offer "Install app" in the address bar.</li>
+              <li><strong>Repo setup:</strong> create a new GitHub repo and add this <code>index.html</code>. Commit + push to <code>main</code>.</li>
+              <li><strong>Enable Pages:</strong> Settings → Pages → Build & deployment → select <em>Deploy from branch</em>, branch <code>main</code>, folder <code>/</code>.</li>
+              <li><strong>Wait & verify:</strong> GitHub builds in ~1 min. Visit the URL displayed in the Pages panel; install prompt appears on HTTPS.</li>
+              <li><strong>Optional seed data:</strong> upload a <code>data/bookmarks.json</code> exported from the app to pre-fill new visitors.</li>
+              <li><strong>CDN assets:</strong> everything is inline, so a single <code>index.html</code> is enough for Pages + PWA caching.</li>
             </ol>
           </div>
           <div class="rounded-2xl border border-slate-200/60 p-4 space-y-2">
             <h3 class="font-semibold">GitHub sync — push/pull workflow</h3>
             <ol class="list-decimal list-inside space-y-1">
-              <li>Generate a classic Personal Access Token with <code>repo</code> scope (Settings → Developer settings → Personal access tokens).</li>
+              <li>Generate a classic Personal Access Token with <code>repo</code> scope (Settings → Developer settings → PATs).</li>
               <li>Fill Owner, Repo, Path (e.g. <code>vault/bookmarks.json</code>) and paste the token into the Sync card.</li>
               <li><strong>Push</strong>: serializes current localStorage data, Base64 encodes it, and updates/creates the GitHub file (keeps SHA so history is preserved).</li>
-              <li><strong>Pull</strong>: downloads the JSON from GitHub, replaces your local vault, and re-renders. Always export a backup first.</li>
-              <li>For private repos, make sure the token user has write access. Revoke tokens immediately if the device is lost.</li>
+              <li><strong>Pull</strong>: downloads JSON from GitHub, replaces your local vault, and re-renders. Always export a backup first.</li>
+              <li>For private repos, ensure the token user has write access. Revoke tokens if the device is lost.</li>
             </ol>
           </div>
         </div>
         <div class="rounded-2xl border border-slate-200/60 p-4 space-y-2">
-          <h3 class="font-semibold">Share anything from other apps</h3>
-          <p>The manifest's <code>share_target</code> + clipboard capture means Mani's Vault acts like a system share sheet target:</p>
+          <h3 class="font-semibold">Share links, text, or images from any app</h3>
           <ul class="list-disc list-inside space-y-1">
-            <li><strong>Share a link</strong> from Chrome/YouTube → choose "Mani's Bookmark Vault" → URL + title auto-fill and thumbnails refresh.</li>
-            <li><strong>Share text</strong> from Kindle/Notion → text arrives inside the snippet field, with the shared title pre-filled so you can rename quickly.</li>
-            <li><strong>Share an image</strong> (or image URL) from Pinterest/Dribbble → attach via upload or paste the copied image URL; image titles keep your mood boards organized.</li>
-            <li><strong>Clipboard helper</strong> runs when the app opens, asking if the copied content should become a bookmark, text note, or reference image.</li>
+            <li><strong>Clipboard prompt:</strong> if you copied anything before opening, Mani's Vault asks whether to store it as a bookmark, text snippet, or image.</li>
+            <li><strong>Android/iOS share sheet:</strong> use the installed PWA → Mani's Vault reads <code>sharedUrl</code>, <code>sharedText</code>, and <code>sharedTitle</code> parameters and pre-fills the form.</li>
+            <li><strong>Images:</strong> upload files or paste image URLs; they appear in the dedicated Images tab.</li>
+            <li><strong>Text:</strong> every snippet gets its own title so long transcripts stay organized.</li>
           </ul>
           <p class="text-xs text-slate-500">Tip: add the deployed URL as a shortcut on Android/iOS home screens for near-native capture speed.</p>
         </div>
@@ -522,18 +578,19 @@
     <section class="glass-panel rounded-3xl p-5" data-collapsible>
       <div class="section-header">
         <h2 class="text-xl font-semibold">Suggestions for the next upgrade</h2>
-        <button type="button" class="section-toggle" data-toggle>
+        <button type="button" class="section-toggle" data-toggle aria-label="Expand section">
           <span class="toggle-icon">+</span>
-          <span>Expand</span>
         </button>
       </div>
       <div class="collapsible-body text-sm text-slate-600 dark:text-slate-200">
         <ul class="list-disc list-inside space-y-1">
-          <li>Hook up AI summaries: send snippets to GPT/Claude and store the responses alongside originals.</li>
+          <li>Hook up AI summaries to generate TL;DRs for long snippets.</li>
           <li>Add reminder dates so each bookmark can resurface via push notification.</li>
           <li>Enable multi-select actions (bulk delete, bulk export of specific folders).</li>
           <li>Tag collaborators and invite them through shared GitHub branches.</li>
-          <li>Render timeline analytics (what you saved per week or per platform).</li>
+          <li>Render timeline analytics (items saved per week/platform).</li>
+          <li>Integrate RSS/Readwise-style auto-importers for saved sources.</li>
+          <li>Provide Siri/Assistant shortcuts to save the current clipboard without opening the UI.</li>
         </ul>
       </div>
     </section>
@@ -603,7 +660,8 @@
       imageEmpty: document.getElementById('imageEmpty'),
       folderField: document.querySelector('input[name="folder"]'),
       clipboardModal: document.getElementById('clipboardModal'),
-      clipboardPreview: document.getElementById('clipboardPreview')
+      clipboardPreview: document.getElementById('clipboardPreview'),
+      saveEntryTop: document.getElementById('saveEntryTop')
     };
 
     function init() {
@@ -719,6 +777,12 @@
         deferredPrompt = null;
         dom.installBtn.disabled = true;
       });
+      if (dom.saveEntryTop) {
+        dom.saveEntryTop.addEventListener('click', (event) => {
+          event.preventDefault();
+          scrollToForm();
+        });
+      }
     }
 
     function initCollapsibles() {
@@ -752,9 +816,10 @@
         body.hidden = false;
       }
       toggle.innerHTML = collapse
-        ? '<span class="toggle-icon">+</span><span>Expand</span>'
-        : '<span class="toggle-icon">−</span><span>Collapse</span>';
+        ? '<span class="toggle-icon">+</span>'
+        : '<span class="toggle-icon">−</span>';
       toggle.setAttribute('aria-expanded', (!collapse).toString());
+      toggle.setAttribute('aria-label', collapse ? 'Expand section' : 'Collapse section');
       section.dataset.collapsed = collapse ? 'true' : 'false';
     }
 
@@ -979,20 +1044,23 @@
         return;
       }
       dom.emptyState.classList.add('hidden');
-      bookmarks.forEach((bookmark) => {
+      bookmarks.forEach((bookmark, index) => {
         const siteName = bookmark.siteName || extractSiteName(bookmark.url);
         const displayPlatform = siteName || bookmark.platform;
         const card = document.createElement('article');
         card.className = 'bookmark-card';
         card.innerHTML = `
-          ${renderThumbnail(bookmark)}
-          <div class="space-y-1">
-            <div class="flex items-center justify-between gap-2">
-              <p class="text-xs uppercase tracking-wide text-slate-500">${bookmark.folder}</p>
-              <span class="text-xs px-2 py-1 rounded-xl bg-slate-900/5 text-slate-600">${displayPlatform || 'website'}</span>
+          <div class="bookmark-row">
+            ${renderThumbnail(bookmark)}
+            <div class="flex-1 space-y-2">
+              <div class="bookmark-meta">
+                <span class="bookmark-index">#${index + 1}</span>
+                <span>${bookmark.folder}</span>
+                <span>${displayPlatform || 'website'}</span>
+              </div>
+              <a href="${bookmark.url || '#'}" ${bookmark.url ? 'target="_blank" rel="noopener"' : ''} class="font-semibold leading-snug line-clamp-2">${bookmark.title || bookmark.url || bookmark.textTitle || 'Untitled entry'}</a>
+              <p class="text-xs text-slate-500">${bookmark.url ? new Date(bookmark.createdAt).toLocaleString() : 'Saved locally'}</p>
             </div>
-            <a href="${bookmark.url || '#'}" ${bookmark.url ? 'target="_blank" rel="noopener"' : ''} class="font-semibold leading-tight line-clamp-2">${bookmark.title || bookmark.url || bookmark.textTitle || 'Untitled entry'}</a>
-            <p class="text-xs text-slate-500">${bookmark.url ? new Date(bookmark.createdAt).toLocaleString() : 'Saved locally'}</p>
           </div>
           ${renderTags(bookmark.tags)}
           ${renderNotes(bookmark.notes)}
@@ -1067,10 +1135,7 @@
       if (preview) {
         return `<img class="bookmark-thumb" src="${preview}" alt="Preview for ${bookmark.title || bookmark.url}" loading="lazy" onerror="this.onerror=null;this.src='https://s.wordpress.com/mshots/v1/${encodeURIComponent('https://example.com')}?w=800';">`;
       }
-      return `<div class="flex items-center gap-3">
-        <div class="w-14 h-14 rounded-2xl bg-slate-200 flex items-center justify-center text-xl">📎</div>
-        <p class="text-sm text-slate-500 line-clamp-2">${bookmark.url || 'No link provided'}</p>
-      </div>`;
+      return `<div class="bookmark-thumb flex items-center justify-center text-xl bg-slate-200">📎</div>`;
     }
 
     function renderTags(tags = []) {
@@ -1257,7 +1322,7 @@
     function getSitePreview(url) {
       try {
         if (!url) return '';
-        return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=800`;
+        return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=400`;
       } catch (err) {
         return '';
       }
@@ -1309,11 +1374,7 @@
 
     function setupServiceWorker() {
       if (!('serviceWorker' in navigator)) return;
-      const swCode = `const CACHE_NAME='bookmark-vault-cache-v1';
-      const ASSETS=['./'];
-      self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
-      self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))));self.clients.claim();});
-      self.addEventListener('fetch',event=>{event.respondWith(caches.match(event.request).then(response=>response||fetch(event.request)));});`;
+      const swCode = `const CACHE_NAME='bookmark-vault-cache-v1';\n      const ASSETS=['./'];\n      self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});\n      self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))));self.clients.claim();});\n      self.addEventListener('fetch',event=>{event.respondWith(caches.match(event.request).then(response=>response||fetch(event.request)));});`;
       const blob = new Blob([swCode], { type: 'text/javascript' });
       const swUrl = URL.createObjectURL(blob);
       navigator.serviceWorker.register(swUrl).catch(console.error);
