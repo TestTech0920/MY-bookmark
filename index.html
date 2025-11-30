@@ -1,3390 +1,1658 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f59e0b" id="themeColorMeta" />
   <title>Mani's Bookmark Vault</title>
-  <meta name="description" content="Mobile-first bookmark manager with clipboard capture, GitHub sync, and offline storage.">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#f59e0b">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f172a'/><path d='M25 20h50v60L50 60 25 80Z' fill='%23f59e0b'/></svg>">
-  
   <style>
-    /* ==========================================
-       CSS VARIABLES & RESET
-    ========================================== */
     :root {
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-left: env(safe-area-inset-left, 0px);
-      --safe-right: env(safe-area-inset-right, 0px);
-      
-      /* Colors - Light Theme (Sunrise) */
-      --bg-primary: linear-gradient(145deg, #fffbeb 0%, #fef3c7 30%, #e0f2fe 100%);
-      --bg-card: rgba(255, 255, 255, 0.9);
-      --bg-card-hover: rgba(255, 255, 255, 0.95);
-      --bg-input: rgba(255, 255, 255, 0.95);
-      --bg-pill: rgba(255, 255, 255, 0.85);
-      --bg-pill-active: #1e293b;
-      --bg-overlay: rgba(0, 0, 0, 0.5);
-      --bg-sheet: #ffffff;
-      --bg-toast: rgba(30, 41, 59, 0.95);
-      
-      --text-primary: #1e293b;
-      --text-secondary: #64748b;
-      --text-muted: #94a3b8;
-      --text-inverse: #ffffff;
-      --text-pill-active: #ffffff;
-      
-      --border-light: rgba(0, 0, 0, 0.08);
-      --border-input: rgba(0, 0, 0, 0.12);
-      
-      --accent: #f59e0b;
-      --accent-light: rgba(245, 158, 11, 0.15);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --amber: #f59e0b;
+      --slate: #1e293b;
+      --bg-light-start: #fffbeb;
+      --bg-light-mid: #fef3c7;
+      --bg-light-end: #dbeafe;
+      --bg-dark-start: #0f172a;
+      --bg-dark-mid: #1e293b;
+      --card-light: rgba(255, 255, 255, 0.92);
+      --card-dark: rgba(30, 41, 59, 0.95);
+      --text-light: #1e293b;
+      --text-dark: #f1f5f9;
+      --muted: #94a3b8;
       --danger: #ef4444;
-      --success: #10b981;
-      --info: #3b82f6;
+      --success: #22c55e;
+      --border-light: rgba(0, 0, 0, 0.08);
+      --border-dark: rgba(255, 255, 255, 0.08);
+      color: var(--text-light);
+      background: linear-gradient(135deg, var(--bg-light-start), var(--bg-light-mid), var(--bg-light-end));
     }
-    
-    /* Dark Theme - Midnight */
-    body.theme-midnight {
-      --bg-primary: linear-gradient(145deg, #0f172a 0%, #1e293b 50%, #0c4a6e 100%);
-      --bg-card: rgba(30, 41, 59, 0.9);
-      --bg-card-hover: rgba(30, 41, 59, 0.95);
-      --bg-input: rgba(30, 41, 59, 0.9);
-      --bg-pill: rgba(255, 255, 255, 0.1);
-      --bg-pill-active: #f59e0b;
-      --bg-sheet: #1e293b;
-      --bg-toast: rgba(255, 255, 255, 0.15);
-      
-      --text-primary: #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --text-muted: #64748b;
-      --text-inverse: #1e293b;
-      --text-pill-active: #1e293b;
-      
-      --border-light: rgba(255, 255, 255, 0.08);
-      --border-input: rgba(255, 255, 255, 0.15);
-    }
-    
-    /* Dark Theme - Neon */
-    body.theme-neon {
-      --bg-primary: linear-gradient(145deg, #0a0a0a 0%, #1a0533 50%, #0d1117 100%);
-      --bg-card: rgba(20, 10, 40, 0.9);
-      --bg-card-hover: rgba(30, 15, 50, 0.95);
-      --bg-input: rgba(20, 10, 40, 0.9);
-      --bg-pill: rgba(255, 255, 255, 0.08);
-      --bg-pill-active: #a855f7;
-      --bg-sheet: #1a0533;
-      --bg-toast: rgba(168, 85, 247, 0.9);
-      
-      --text-primary: #f0f0ff;
-      --text-secondary: #c4b5fd;
-      --text-muted: #7c3aed;
-      --text-inverse: #0a0a0a;
-      --text-pill-active: #ffffff;
-      
-      --border-light: rgba(168, 85, 247, 0.2);
-      --border-input: rgba(168, 85, 247, 0.3);
-      
-      --accent: #a855f7;
-      --accent-light: rgba(168, 85, 247, 0.2);
-    }
-    
-    /* Light Theme - Glass */
-    body.theme-glass {
-      --bg-primary: linear-gradient(145deg, #f0f9ff 0%, #fdf4ff 35%, #f0fdf4 70%, #fffbeb 100%);
-      --bg-card: rgba(255, 255, 255, 0.6);
-      --bg-card-hover: rgba(255, 255, 255, 0.75);
-      --bg-input: rgba(255, 255, 255, 0.7);
-      --bg-pill: rgba(255, 255, 255, 0.6);
-      --bg-pill-active: #0f172a;
-      --bg-sheet: rgba(255, 255, 255, 0.95);
-      
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #94a3b8;
-      --text-inverse: #ffffff;
-      --text-pill-active: #ffffff;
-      
-      --border-light: rgba(0, 0, 0, 0.06);
-      --border-input: rgba(0, 0, 0, 0.1);
-    }
-    
-    /* ==========================================
-       BASE RESET
-    ========================================== */
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    html {
-      font-size: 16px;
-      -webkit-text-size-adjust: 100%;
-    }
-    
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      min-height: 100vh;
-      min-height: 100dvh;
-      padding-top: var(--safe-top);
-      padding-bottom: calc(75px + var(--safe-bottom));
-      padding-left: var(--safe-left);
-      padding-right: var(--safe-right);
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      transition: background 0.3s ease;
-    }
-    
-    body.no-scroll {
-      overflow: hidden;
-      position: fixed;
-      width: 100%;
-      height: 100%;
-    }
-    
-    /* ==========================================
-       BUTTON & INTERACTIVE ELEMENTS - MOBILE FIX
-    ========================================== */
-    button, .btn, [role="button"] {
-      font-family: inherit;
-      font-size: inherit;
-      cursor: pointer;
-      border: none;
-      background: transparent;
-      color: inherit;
-      padding: 0;
       margin: 0;
-      outline: none;
-      -webkit-tap-highlight-color: transparent;
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--bg-light-start), var(--bg-light-mid), var(--bg-light-end));
+      color: var(--text-light);
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+      padding-top: env(safe-area-inset-top);
+      transition: background 0.4s ease, color 0.4s ease;
       touch-action: manipulation;
-      user-select: none;
-      -webkit-user-select: none;
     }
-    
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    body.dark {
+      background: linear-gradient(135deg, var(--bg-dark-start), var(--bg-dark-mid), var(--bg-dark-end));
+      color: var(--text-dark);
     }
-    
-    /* Active states for touch feedback */
-    .touchable:active,
-    button:active:not(:disabled),
-    .btn:active:not(:disabled) {
-      opacity: 0.7;
-      transform: scale(0.98);
+    *, *::before, *::after { box-sizing: border-box; }
+    button {
+      border: none;
+      background: none;
+      font: inherit;
+      padding: 0;
+      cursor: pointer;
+      color: inherit;
+      min-height: 44px;
+      min-width: 44px;
     }
-    
-    /* ==========================================
-       INPUT ELEMENTS
-    ========================================== */
-    input, select, textarea {
-      font-family: inherit;
-      font-size: 16px; /* Prevents iOS zoom */
-      color: var(--text-primary);
-      background: var(--bg-input);
-      border: 1px solid var(--border-input);
-      border-radius: 12px;
-      padding: 14px 16px;
+    .app-container {
+      width: min(960px, 100%);
+      margin: 0 auto;
+      padding: 16px;
+      padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    }
+    .card {
+      background: var(--card-light);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      border: 1px solid var(--border-light);
+    }
+    body.dark .card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .title-block h1 {
+      font-size: 28px;
+      margin: 0;
+      font-weight: 700;
+    }
+    .title-block p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .settings-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .search-box {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .search-box input {
       width: 100%;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      -webkit-appearance: none;
-      appearance: none;
+      padding: 12px 44px;
+      border-radius: 16px;
+      border: 1px solid var(--border-light);
+      font-size: 16px;
+      background: #fff;
+      color: inherit;
     }
-    
-    input:focus, select:focus, textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-light);
+    body.dark .search-box input {
+      background: rgba(30,41,59,0.95);
+      border: 1px solid var(--border-dark);
     }
-    
-    input::placeholder, textarea::placeholder {
-      color: var(--text-muted);
+    .search-box svg {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
     }
-    
-    textarea {
-      resize: none;
-      min-height: 100px;
+    .search-icon { left: 16px; }
+    .clear-btn { right: 16px; display: none; }
+    .clear-btn.show { display: block; }
+    .horizontal-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      scrollbar-width: none;
     }
-    
-    select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 20px;
-      padding-right: 44px;
+    .horizontal-scroll::-webkit-scrollbar { display: none; }
+    .stat-card {
+      min-width: 120px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid var(--border-light);
     }
-    
-    /* ==========================================
-       BOTTOM NAVIGATION
-    ========================================== */
+    body.dark .stat-card {
+      background: rgba(30,41,59,0.95);
+      border: 1px solid var(--border-dark);
+    }
+    .stat-value { font-size: 24px; font-weight: 700; }
+    .pill {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border-light);
+      background: rgba(255,255,255,0.9);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    body.dark .pill {
+      border: 1px solid var(--border-dark);
+      background: rgba(30,41,59,0.9);
+    }
+    .pill.active {
+      background: var(--slate);
+      color: #fff;
+      border-color: var(--slate);
+    }
+    body.dark .pill.active {
+      background: #fff;
+      color: var(--slate);
+    }
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      border-radius: 16px;
+      background: rgba(255,255,255,0.6);
+      padding: 12px;
+      font-weight: 600;
+    }
+    .tab-btn.active {
+      background: #fff;
+      box-shadow: 0 12px 24px rgba(15,23,42,0.12);
+    }
+    body.dark .tab-btn { background: rgba(30,41,59,0.7); }
+    body.dark .tab-btn.active { background: rgba(15,23,42,0.9); }
+    .bookmark-card {
+      display: grid;
+      grid-template-columns: minmax(140px, 200px) 1fr;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .bookmark-media {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      max-width: 200px;
+      flex-wrap: wrap;
+    }
+    .bookmark-thumb {
+      width: 96px;
+      height: 96px;
+      border-radius: 16px;
+      object-fit: cover;
+      background: #e2e8f0;
+      flex-shrink: 0;
+    }
+    .thumb-caption {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-light);
+      line-height: 1.3;
+      flex: 1;
+      min-width: 140px;
+    }
+    .thumb-caption a {
+      color: inherit;
+      text-decoration: none;
+    }
+    body.dark .bookmark-thumb { background: #0f172a; }
+    body.dark .thumb-caption { color: var(--text-dark); }
+    .bookmark-meta {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(245,158,11,0.12);
+      color: var(--amber);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .tag {
+      padding: 6px 12px;
+      border-radius: 12px;
+      background: rgba(99,102,241,0.1);
+      font-size: 12px;
+    }
+    body.dark .tag { background: rgba(99,102,241,0.2); }
+    .card-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .card-actions button {
+      flex: 1;
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(15,23,42,0.05);
+    }
+    body.dark .card-actions button { background: rgba(255,255,255,0.08); }
+    .snippet-card pre {
+      white-space: pre-wrap;
+      font-family: inherit;
+      margin: 0;
+    }
+    .images-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .image-card img {
+      width: 100%;
+      aspect-ratio: 1/1;
+      object-fit: cover;
+      border-radius: 16px;
+    }
+    .load-more {
+      width: 100%;
+      border-radius: 16px;
+      background: var(--slate);
+      color: #fff;
+      margin: 16px 0 32px;
+    }
+    .fab {
+      position: fixed;
+      right: 20px;
+      bottom: calc(90px + env(safe-area-inset-bottom));
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle at top, #fcd34d, #f59e0b);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 35px rgba(245,158,11,0.5);
+      z-index: 30;
+    }
     .bottom-nav {
       position: fixed;
       bottom: 0;
       left: 0;
-      right: 0;
-      height: calc(70px + var(--safe-bottom));
-      padding-bottom: var(--safe-bottom);
-      background: var(--bg-sheet);
-      border-top: 1px solid var(--border-light);
-      display: flex;
-      justify-content: space-around;
-      align-items: flex-start;
-      padding-top: 10px;
-      z-index: 1000;
+      width: 100%;
+      background: rgba(15,23,42,0.8);
+      color: #cbd5f5;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index: 20;
       backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
     }
-    
-    .nav-item {
+    .bottom-nav button {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      padding: 8px 12px;
-      border-radius: 12px;
-      min-width: 64px;
-      min-height: 50px;
-      transition: background 0.2s, color 0.2s;
-      color: var(--text-muted);
+      font-size: 12px;
+      color: #94a3b8;
     }
-    
-    .nav-item.active {
-      color: var(--accent);
-      background: var(--accent-light);
-    }
-    
-    .nav-item svg {
-      width: 24px;
-      height: 24px;
-      stroke-width: 2;
-    }
-    
-    .nav-item span {
-      font-size: 11px;
-      font-weight: 500;
-    }
-    
-    /* ==========================================
-       FLOATING ACTION BUTTON
-    ========================================== */
-    .fab {
+    .bottom-nav button.active { color: var(--amber); }
+    .modal, .sheet {
       position: fixed;
-      bottom: calc(90px + var(--safe-bottom));
-      right: 20px;
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent) 0%, #ea580c 100%);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 6px 24px rgba(245, 158, 11, 0.4);
-      z-index: 999;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .fab:active {
-      transform: scale(0.92);
-      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
-    }
-    
-    .fab svg {
-      width: 28px;
-      height: 28px;
-      stroke-width: 2.5;
-    }
-    
-    /* ==========================================
-       HEADER
-    ========================================== */
-    .header {
-      padding: 16px 20px;
-    }
-    
-    .header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-    
-    .header-title {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-    
-    .header-subtitle {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-top: 2px;
-    }
-    
-    .header-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: var(--bg-card);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--border-light);
-    }
-    
-    .header-btn svg {
-      width: 22px;
-      height: 22px;
-      color: var(--text-primary);
-    }
-    
-    /* ==========================================
-       SEARCH BAR
-    ========================================== */
-    .search-container {
-      position: relative;
-    }
-    
-    .search-box {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
-      border-radius: 14px;
-      padding: 0 16px;
-    }
-    
-    .search-box svg {
-      width: 20px;
-      height: 20px;
-      color: var(--text-muted);
-      flex-shrink: 0;
-    }
-    
-    .search-box input {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 14px 0;
-      font-size: 16px;
-    }
-    
-    .search-box input:focus {
-      box-shadow: none;
-    }
-    
-    .search-clear {
-      width: 44px;
-      height: 44px;
-      margin: -8px -8px -8px 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    /* ==========================================
-       STATS ROW
-    ========================================== */
-    .stats-row {
-      display: flex;
-      gap: 12px;
-      padding: 16px 20px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      scroll-snap-type: x mandatory;
-    }
-    
-    .stats-row::-webkit-scrollbar {
-      display: none;
-    }
-    
-    .stat-card {
-      flex-shrink: 0;
-      min-width: 90px;
-      padding: 14px 16px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
-      border-radius: 14px;
-      text-align: center;
-      scroll-snap-align: start;
-    }
-    
-    .stat-value {
-      font-size: 26px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-    
-    .stat-label {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-top: 4px;
-    }
-    
-    /* ==========================================
-       PILLS (Platform & Folder Filters)
-    ========================================== */
-    .pill-container {
-      display: flex;
-      gap: 10px;
-      padding: 8px 20px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      scroll-snap-type: x mandatory;
-    }
-    
-    .pill-container::-webkit-scrollbar {
-      display: none;
-    }
-    
-    .pill {
-      flex-shrink: 0;
-      padding: 10px 18px;
-      background: var(--bg-pill);
-      border: 1px solid var(--border-light);
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      white-space: nowrap;
-      scroll-snap-align: start;
-      transition: all 0.2s;
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .pill.active {
-      background: var(--bg-pill-active);
-      color: var(--text-pill-active);
-      border-color: var(--bg-pill-active);
-    }
-    
-    /* ==========================================
-       CONTENT TABS
-    ========================================== */
-    .tabs-container {
-      padding: 0 20px;
-      margin: 12px 0;
-    }
-    
-    .tabs {
-      display: flex;
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
-      border-radius: 12px;
-      padding: 4px;
-    }
-    
-    .tab-btn {
-      flex: 1;
-      padding: 12px 8px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      text-align: center;
-      color: var(--text-secondary);
-      transition: all 0.2s;
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .tab-btn.active {
-      background: var(--bg-sheet);
-      color: var(--text-primary);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-    
-    /* ==========================================
-       BOOKMARK CARDS
-    ========================================== */
-    .list-container {
-      padding: 0 20px 20px;
-    }
-    
-    .bookmark-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 12px;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .bookmark-card:active {
-      transform: scale(0.99);
-    }
-    
-    .bookmark-header {
-      display: flex;
-      gap: 14px;
-    }
-    
-    .bookmark-thumb {
-      width: 64px;
-      height: 64px;
-      border-radius: 12px;
-      object-fit: cover;
-      background: var(--border-light);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-size: 12px;
-    }
-    
-    .bookmark-thumb img {
+      left: 0;
+      top: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      border-radius: 12px;
+      display: none;
+      z-index: 100;
     }
-    
-    .bookmark-info {
-      flex: 1;
-      min-width: 0;
+    .modal.open, .sheet.open { display: block; }
+    .modal-backdrop, .sheet-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15,23,42,0.45);
     }
-    
-    .bookmark-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    
-    .bookmark-badge {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-muted);
-    }
-    
-    .bookmark-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      line-height: 1.4;
-    }
-    
-    .bookmark-title a {
-      color: inherit;
-      text-decoration: none;
-    }
-    
-    .bookmark-url {
-      font-size: 13px;
-      color: var(--text-secondary);
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      word-break: break-all;
-    }
-    
-    .bookmark-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 10px;
-    }
-    
-    .tag {
-      padding: 4px 10px;
-      background: var(--accent-light);
-      color: var(--accent);
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-    
-    .bookmark-notes {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-top: 10px;
-      line-height: 1.5;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    
-    .bookmark-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 14px;
-    }
-    
-    .action-btn {
-      flex: 1;
-      padding: 12px 16px;
-      background: var(--bg-pill);
-      border: 1px solid var(--border-light);
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 500;
-      text-align: center;
-      color: var(--text-primary);
-      min-height: 46px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: background 0.2s;
-    }
-    
-    .action-btn:active {
-      background: var(--bg-card-hover);
-    }
-    
-    .action-btn.danger {
-      color: var(--danger);
-    }
-    
-    .action-btn svg {
-      width: 18px;
-      height: 18px;
-    }
-    
-    /* ==========================================
-       SNIPPET CARDS
-    ========================================== */
-    .snippet-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
-      border-radius: 16px;
+    .modal-content, .sheet-content {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      max-height: 90vh;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      background: #fff;
       padding: 16px;
+      overflow-y: auto;
+    }
+    body.dark .modal-content, body.dark .sheet-content { background: #1e293b; }
+    body.locked { overflow: hidden; }
+    .modal-header, .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 12px;
     }
-    
-    .snippet-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    
-    .snippet-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-    
-    .snippet-folder {
-      font-size: 12px;
-      color: var(--text-muted);
-      background: var(--bg-pill);
-      padding: 4px 10px;
+    .drag-handle {
+      width: 60px;
+      height: 6px;
       border-radius: 999px;
+      background: rgba(148,163,184,0.5);
+      margin: 0 auto 12px;
     }
-    
-    .snippet-content {
-      font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-height: 150px;
-      overflow: hidden;
-    }
-    
-    /* ==========================================
-       IMAGE GRID
-    ========================================== */
-    .image-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      padding: 0 20px 20px;
-    }
-    
-    .image-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
-      border-radius: 14px;
-      overflow: hidden;
-    }
-    
-    .image-card img {
-      width: 100%;
-      aspect-ratio: 1;
-      object-fit: cover;
-    }
-    
-    .image-card-title {
-      padding: 10px 12px;
+    form label {
+      display: flex;
+      flex-direction: column;
       font-size: 13px;
-      font-weight: 500;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      gap: 6px;
+      margin-bottom: 12px;
     }
-    
-    /* ==========================================
-       EMPTY STATE
-    ========================================== */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 30px;
-      text-align: center;
-    }
-    
-    .empty-state svg {
-      width: 72px;
-      height: 72px;
-      color: var(--text-muted);
-      opacity: 0.4;
-      margin-bottom: 20px;
-    }
-    
-    .empty-state h3 {
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 8px;
-    }
-    
-    .empty-state p {
-      font-size: 15px;
-      color: var(--text-secondary);
-      max-width: 250px;
-    }
-    
-    /* ==========================================
-       MODAL (Full Screen on Mobile)
-    ========================================== */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: var(--bg-overlay);
-      z-index: 2000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s;
-    }
-    
-    .modal-overlay.show {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    .modal-container {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-height: 92vh;
-      background: var(--bg-sheet);
-      border-radius: 24px 24px 0 0;
-      z-index: 2001;
-      transform: translateY(100%);
-      transition: transform 0.3s ease-out;
-      display: flex;
-      flex-direction: column;
-      padding-bottom: var(--safe-bottom);
-    }
-    
-    .modal-overlay.show .modal-container {
-      transform: translateY(0);
-    }
-    
-    .modal-handle {
-      width: 40px;
-      height: 5px;
-      background: var(--border-light);
-      border-radius: 999px;
-      margin: 10px auto 0;
-    }
-    
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border-light);
-      flex-shrink: 0;
-    }
-    
-    .modal-header-btn {
-      padding: 10px 16px;
+    form input, form textarea, form select {
+      border-radius: 12px;
+      border: 1px solid var(--border-light);
+      padding: 12px;
       font-size: 16px;
-      font-weight: 500;
-      min-width: 70px;
-      min-height: 44px;
+      background: rgba(255,255,255,0.9);
+    }
+    body.dark form input, body.dark form textarea, body.dark form select {
+      background: rgba(15,23,42,0.6);
+      border: 1px solid var(--border-dark);
+      color: #fff;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    .sheet-actions {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
     }
-    
-    .modal-header-btn.primary {
-      color: var(--accent);
-      font-weight: 600;
+    .sheet-actions button {
+      flex: 1 1 calc(50% - 12px);
+      border-radius: 16px;
+      background: rgba(15,23,42,0.05);
+      padding: 12px;
     }
-    
-    .modal-title {
-      font-size: 17px;
-      font-weight: 600;
+    body.dark .sheet-actions button {
+      background: rgba(255,255,255,0.08);
     }
-    
-    .modal-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    /* ==========================================
-       FORM ELEMENTS
-    ========================================== */
-    .form-group {
-      margin-bottom: 18px;
-    }
-    
-    .form-label {
-      display: block;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-    }
-    
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-    
-    .form-section {
-      padding-top: 20px;
-      margin-top: 20px;
-      border-top: 1px solid var(--border-light);
-    }
-    
-    .form-section-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 16px;
-    }
-    
-    /* Image Upload */
-    .image-upload-area {
-      border: 2px dashed var(--border-input);
-      border-radius: 14px;
-      padding: 30px;
-      text-align: center;
-      transition: border-color 0.2s, background 0.2s;
-    }
-    
-    .image-upload-area:active {
-      background: var(--bg-card-hover);
-    }
-    
-    .image-upload-area svg {
-      width: 36px;
-      height: 36px;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-    
-    .image-upload-area p {
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-    
-    .image-preview {
-      position: relative;
-      margin-top: 12px;
-      border-radius: 14px;
-      overflow: hidden;
-    }
-    
-    .image-preview img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-    }
-    
-    .image-preview-remove {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.6);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .image-preview-remove svg {
-      width: 20px;
-      height: 20px;
-    }
-    
-    /* ==========================================
-       ACTION SHEETS
-    ========================================== */
-    .sheet-overlay {
-      position: fixed;
-      inset: 0;
-      background: var(--bg-overlay);
-      z-index: 3000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s;
-    }
-    
-    .sheet-overlay.show {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    .sheet-container {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--bg-sheet);
-      border-radius: 20px 20px 0 0;
-      padding: 8px 0 calc(20px + var(--safe-bottom));
-      transform: translateY(100%);
-      transition: transform 0.3s ease-out;
-      z-index: 3001;
-      max-height: 85vh;
-      overflow-y: auto;
-    }
-    
-    .sheet-overlay.show .sheet-container {
-      transform: translateY(0);
-    }
-    
-    .sheet-handle {
-      width: 40px;
-      height: 5px;
-      background: var(--border-light);
-      border-radius: 999px;
-      margin: 8px auto 16px;
-    }
-    
-    .sheet-title {
-      font-size: 18px;
-      font-weight: 600;
-      padding: 0 20px 14px;
-      color: var(--text-primary);
-    }
-    
-    .sheet-item {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 20px;
-      font-size: 16px;
-      font-weight: 500;
-      color: var(--text-primary);
-      width: 100%;
-      text-align: left;
-      min-height: 56px;
-      transition: background 0.2s;
-    }
-    
-    .sheet-item:active {
-      background: var(--bg-card);
-    }
-    
-    .sheet-item svg {
-      width: 24px;
-      height: 24px;
-      color: var(--text-secondary);
-    }
-    
-    .sheet-item.danger {
-      color: var(--danger);
-    }
-    
-    .sheet-item.danger svg {
-      color: var(--danger);
-    }
-    
-    .sheet-divider {
-      height: 1px;
-      background: var(--border-light);
-      margin: 8px 20px;
-    }
-    
-    /* Theme color indicators */
-    .theme-dot {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      border: 2px solid var(--border-light);
-    }
-    
-    /* ==========================================
-       TOAST NOTIFICATIONS
-    ========================================== */
     .toast {
       position: fixed;
-      bottom: calc(95px + var(--safe-bottom));
+      bottom: calc(120px + env(safe-area-inset-bottom));
       left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      padding: 14px 24px;
-      background: var(--bg-toast);
-      color: var(--text-inverse);
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(15,23,42,0.9);
+      color: #fff;
+      padding: 12px 24px;
       border-radius: 999px;
-      font-size: 15px;
-      font-weight: 500;
-      z-index: 5000;
       opacity: 0;
-      transition: transform 0.3s, opacity 0.3s;
-      white-space: nowrap;
-      max-width: calc(100% - 40px);
-      text-align: center;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 200;
     }
-    
     .toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
-    
-    /* ==========================================
-       SETTINGS VIEW
-    ========================================== */
-    .settings-group {
-      margin-bottom: 28px;
-    }
-    
-    .settings-title {
-      font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-muted);
-      padding: 0 24px 10px;
-    }
-    
-    .settings-list {
-      background: var(--bg-card);
-      border-radius: 16px;
-      margin: 0 20px;
-      overflow: hidden;
-      border: 1px solid var(--border-light);
-    }
-    
-    .settings-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px;
-      border-bottom: 1px solid var(--border-light);
-      min-height: 60px;
-      width: 100%;
-      text-align: left;
-      transition: background 0.2s;
-    }
-    
-    .settings-item:last-child {
-      border-bottom: none;
-    }
-    
-    .settings-item:active {
-      background: var(--bg-card-hover);
-    }
-    
-    .settings-item-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    
-    .settings-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .settings-icon svg {
-      width: 20px;
-      height: 20px;
-    }
-    
-    .settings-text {
-      font-size: 16px;
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-    
-    .settings-subtext {
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-top: 2px;
-    }
-    
-    .settings-chevron {
-      width: 20px;
-      height: 20px;
-      color: var(--text-muted);
-    }
-    
-    /* GitHub Form */
-    .github-form {
-      padding: 0 20px;
-    }
-    
-    .github-form input {
-      margin-bottom: 12px;
-    }
-    
-    .github-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 6px;
-    }
-    
-    .github-btn {
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      text-align: center;
-      min-height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .github-btn.secondary {
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
-      color: var(--text-primary);
-    }
-    
-    .github-btn.primary {
-      background: var(--bg-pill-active);
-      color: var(--text-pill-active);
-    }
-    
-    .github-status {
-      text-align: center;
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-top: 14px;
-    }
-    
-    /* ==========================================
-       VIEWS
-    ========================================== */
-    .view {
-      display: none;
-    }
-    
-    .view.active {
-      display: block;
-    }
-    
-    /* ==========================================
-       UTILITIES
-    ========================================== */
-    .hidden {
-      display: none !important;
-    }
-    
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      border: 0;
+    .hidden { display: none !important; }
+    .settings-view { display: none; }
+    .settings-view.active { display: block; }
+    .home-view.hidden { display: none; }
+    @media (min-width: 768px) {
+      .bottom-nav { position: sticky; bottom: 0; }
+      body { padding-bottom: 40px; }
+      .fab { bottom: 40px; }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body>
-  <!-- ==========================================
-       HOME VIEW
-  ========================================== -->
-  <div id="homeView" class="view active">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-row">
-        <div>
-          <h1 class="header-title">Bookmarks</h1>
-          <p class="header-subtitle" id="countLabel">0 items saved</p>
+  <div class="app-container">
+    <section id="homeView" class="home-view">
+      <div class="header">
+        <div class="title-block">
+          <h1>Bookmarks</h1>
+          <p id="itemCount">0 items</p>
         </div>
-        <button type="button" class="header-btn" id="settingsBtn" aria-label="Settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+        <button class="settings-btn" id="openSettings" aria-label="Open settings">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .69.4 1.31 1.03 1.58.63.27 1.31.04 1.77-.42l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V15z"></path>
           </svg>
         </button>
       </div>
-      
-      <!-- Search -->
-      <div class="search-container">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="M21 21l-4.35-4.35"/>
-          </svg>
-          <input type="search" id="searchInput" placeholder="Search bookmarks..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-          <button type="button" class="search-clear hidden" id="clearSearchBtn" aria-label="Clear search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M15 9l-6 6M9 9l6 6"/>
-            </svg>
-          </button>
+      <div class="search-box">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="search" id="searchInput" placeholder="Search..." autocomplete="off" autocorrect="off" spellcheck="false" list="searchSuggestions" />
+        <datalist id="searchSuggestions"></datalist>
+        <button class="clear-btn" id="clearSearch" aria-label="Clear search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="horizontal-scroll" id="statsRow">
+        <div class="stat-card">
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statToday">0</div>
+          <div class="stat-label">Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statWeek">0</div>
+          <div class="stat-label">Week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statFolders">0</div>
+          <div class="stat-label">Folders</div>
         </div>
       </div>
-    </header>
-    
-    <!-- Stats -->
-    <div class="stats-row" id="statsRow">
-      <div class="stat-card">
-        <div class="stat-value" id="statTotal">0</div>
-        <div class="stat-label">Total</div>
+      <div class="horizontal-scroll" id="platformRow"></div>
+      <div class="horizontal-scroll" id="folderRow"></div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="bookmarks">Bookmarks</button>
+        <button class="tab-btn" data-tab="snippets">Snippets</button>
+        <button class="tab-btn" data-tab="images">Images</button>
       </div>
-      <div class="stat-card">
-        <div class="stat-value" id="statToday">0</div>
-        <div class="stat-label">Today</div>
+      <div id="contentArea">
+        <div id="bookmarksPanel"></div>
+        <div id="snippetsPanel" class="hidden"></div>
+        <div id="imagesPanel" class="hidden"></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-value" id="statWeek">0</div>
-        <div class="stat-label">This Week</div>
+      <button class="load-more hidden" id="loadMore" aria-label="Load more">Load More</button>
+    </section>
+    <section id="settingsView" class="settings-view">
+      <div class="header">
+        <button id="backHome" aria-label="Back to home">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <h2>Settings</h2>
+        <span style="width:44px;"></span>
       </div>
-      <div class="stat-card">
-        <div class="stat-value" id="statFolders">0</div>
-        <div class="stat-label">Folders</div>
+      <div class="card">
+        <h3>Appearance</h3>
+        <button id="openThemeSheet" style="width:100%; text-align:left; display:flex; justify-content:space-between; align-items:center;">
+          Theme <span id="themeLabel">Light</span>
+        </button>
       </div>
-    </div>
-    
-    <!-- Platform Filter -->
-    <div class="pill-container" id="platformPills"></div>
-    
-    <!-- Folder Filter -->
-    <div class="pill-container" id="folderPills"></div>
-    
-    <!-- Content Tabs -->
-    <div class="tabs-container">
-      <div class="tabs" id="contentTabs">
-        <button type="button" class="tab-btn active" data-tab="bookmarks">Bookmarks</button>
-        <button type="button" class="tab-btn" data-tab="snippets">Snippets</button>
-        <button type="button" class="tab-btn" data-tab="images">Images</button>
+      <div class="card" id="guidesCard">
+        <h3>Guides</h3>
+        <div style="display:flex; flex-direction:column; gap:12px; font-size:14px; color:var(--muted);">
+          <details>
+            <summary style="cursor:pointer; font-weight:600; color:inherit;">Publish to GitHub Pages</summary>
+            <ol style="margin:8px 0 0 18px;">
+              <li>Create a new repo like <strong>bookmark-vault</strong>.</li>
+              <li>Upload this <em>index.html</em> file to the repo root.</li>
+              <li>In repo settings → Pages, choose <strong>deploy from branch</strong> and select <strong>main / root</strong>.</li>
+              <li>Wait for the green check, then visit <code>https://USERNAME.github.io/REPO</code>.</li>
+            </ol>
+          </details>
+          <details>
+            <summary style="cursor:pointer; font-weight:600; color:inherit;">GitHub Sync Tips</summary>
+            <ul style="margin:8px 0 0 18px;">
+              <li>Owner = username/org, Repo = repo name, Path = e.g. <code>data/bookmarks.json</code>.</li>
+              <li>Token needs <code>repo</code> scope (classic) or <code>contents:write</code> (fine-grained).</li>
+              <li>Tap <strong>Pull</strong> to overwrite local data with the repo file.</li>
+              <li>Tap <strong>Push</strong> to upload current data (stores SHA for next push).</li>
+            </ul>
+          </details>
+          <details>
+            <summary style="cursor:pointer; font-weight:600; color:inherit;">Share From Other Apps</summary>
+            <ul style="margin:8px 0 0 18px;">
+              <li>Install the PWA first so it appears in the native share sheet.</li>
+              <li>Share any link/text to “Bookmarks” and the add modal opens pre-filled.</li>
+              <li>The app reads <em>title</em>, <em>text</em>, and <em>url</em> query params automatically.</li>
+            </ul>
+          </details>
+        </div>
       </div>
-    </div>
-    
-    <!-- Bookmark List -->
-    <div id="bookmarkList" class="list-container"></div>
-    
-    <!-- Snippet List -->
-    <div id="snippetList" class="list-container hidden"></div>
-    
-    <!-- Image Grid -->
-    <div id="imageGrid" class="image-grid hidden"></div>
-    
-    <!-- Empty State -->
-    <div id="emptyState" class="empty-state hidden">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
-      </svg>
-      <h3>No bookmarks yet</h3>
-      <p>Tap the + button to add your first bookmark</p>
-    </div>
-    
-    <!-- Load More -->
-    <div id="loadMoreContainer" class="list-container hidden">
-      <button type="button" class="action-btn" id="loadMoreBtn" style="background: var(--accent-light); color: var(--accent);">
-        Load More
-      </button>
-    </div>
+      <div class="card">
+        <h3>Data</h3>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button id="exportBtn" style="flex:1; border-radius:12px; background:rgba(15,23,42,0.05);">Export JSON</button>
+          <button id="importBtn" style="flex:1; border-radius:12px; background:rgba(15,23,42,0.05);">Import JSON</button>
+          <input type="file" id="importInput" accept="application/json" class="hidden" />
+        </div>
+        <button id="clearData" style="width:100%; margin-top:12px; color:var(--danger);">Clear All Data</button>
+      </div>
+      <div class="card">
+        <h3>GitHub Sync</h3>
+        <label>Owner<input type="text" id="ghOwner"></label>
+        <label>Repo<input type="text" id="ghRepo"></label>
+        <label>Path<input type="text" id="ghPath"></label>
+        <label>Token<input type="password" id="ghToken"></label>
+        <div style="display:flex; gap:12px;">
+          <button id="pullBtn" style="flex:1; border-radius:12px; background:rgba(15,23,42,0.05);">Pull</button>
+          <button id="pushBtn" style="flex:1; border-radius:12px; background:rgba(15,23,42,0.05);">Push</button>
+        </div>
+        <p id="githubStatus" style="font-size:13px; color:var(--muted); margin-top:8px;">Disconnected</p>
+      </div>
+      <div class="card">
+        <h3>About</h3>
+        <p>Mani's Bookmark Vault v2.1</p>
+        <button id="installBtn" disabled style="width:100%; border-radius:12px; background:var(--slate); color:#fff;">Install App</button>
+      </div>
+    </section>
   </div>
-  
-  <!-- ==========================================
-       SETTINGS VIEW
-  ========================================== -->
-  <div id="settingsView" class="view">
-    <header class="header">
-      <div class="header-row">
-        <button type="button" class="header-btn" id="backBtn" aria-label="Back">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-        </button>
-        <h1 class="header-title" style="flex:1; text-align:center; margin-right:44px;">Settings</h1>
-      </div>
-    </header>
-    
-    <!-- Appearance -->
-    <div class="settings-group">
-      <div class="settings-title">Appearance</div>
-      <div class="settings-list">
-        <button type="button" class="settings-item" id="themeBtn">
-          <div class="settings-item-left">
-            <div class="settings-icon" style="background: #ddd6fe;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2">
-                <circle cx="12" cy="12" r="5"/>
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-              </svg>
-            </div>
-            <div>
-              <div class="settings-text">Theme</div>
-              <div class="settings-subtext" id="currentThemeLabel">Sunrise</div>
-            </div>
-          </div>
-          <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-    
-    <!-- Data Management -->
-    <div class="settings-group">
-      <div class="settings-title">Data</div>
-      <div class="settings-list">
-        <button type="button" class="settings-item" id="exportBtn">
-          <div class="settings-item-left">
-            <div class="settings-icon" style="background: #bbf7d0;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-              </svg>
-            </div>
-            <div>
-              <div class="settings-text">Export Data</div>
-              <div class="settings-subtext">Download as JSON</div>
-            </div>
-          </div>
-          <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </button>
-        
-        <label class="settings-item" style="cursor: pointer;">
-          <div class="settings-item-left">
-            <div class="settings-icon" style="background: #bfdbfe;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-              </svg>
-            </div>
-            <div>
-              <div class="settings-text">Import Data</div>
-              <div class="settings-subtext">Load from JSON file</div>
-            </div>
-          </div>
-          <input type="file" id="importFileInput" accept=".json,application/json" class="hidden">
-          <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </label>
-        
-        <button type="button" class="settings-item" id="clearAllBtn">
-          <div class="settings-item-left">
-            <div class="settings-icon" style="background: #fecaca;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                <line x1="10" y1="11" x2="10" y2="17"/>
-                <line x1="14" y1="11" x2="14" y2="17"/>
-              </svg>
-            </div>
-            <div>
-              <div class="settings-text" style="color: #dc2626;">Clear All Data</div>
-              <div class="settings-subtext">Permanently delete everything</div>
-            </div>
-          </div>
-          <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-    
-    <!-- GitHub Sync -->
-    <div class="settings-group">
-      <div class="settings-title">GitHub Sync</div>
-      <div class="github-form">
-        <input type="text" id="githubOwner" placeholder="Username or Organization">
-        <input type="text" id="githubRepo" placeholder="Repository name">
-        <input type="text" id="githubPath" placeholder="File path (e.g., data/bookmarks.json)">
-        <input type="password" id="githubToken" placeholder="Personal Access Token">
-        <div class="github-buttons">
-          <button type="button" class="github-btn secondary" id="pullGithubBtn">Pull</button>
-          <button type="button" class="github-btn primary" id="pushGithubBtn">Push</button>
-        </div>
-        <p class="github-status" id="githubStatus">Not synced</p>
-      </div>
-    </div>
-    
-    <!-- About -->
-    <div class="settings-group">
-      <div class="settings-title">About</div>
-      <div class="settings-list">
-        <div class="settings-item" style="cursor: default;">
-          <div class="settings-item-left">
-            <div class="settings-icon" style="background: #fef3c7;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
-              </svg>
-            </div>
-            <div>
-              <div class="settings-text">Mani's Bookmark Vault</div>
-              <div class="settings-subtext">Version 2.0 - Mobile Edition</div>
-            </div>
-          </div>
-        </div>
-        
-        <button type="button" class="settings-item" id="installPwaBtn" disabled style="opacity: 0.5;">
-          <div class="settings-item-left">
-            <div class="settings-icon" style="background: #cffafe;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-              </svg>
-            </div>
-            <div>
-              <div class="settings-text">Install App</div>
-              <div class="settings-subtext">Add to home screen</div>
-            </div>
-          </div>
-          <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- ==========================================
-       ADD/EDIT MODAL
-  ========================================== -->
-  <div id="addModal" class="modal-overlay">
-    <div class="modal-container">
-      <div class="modal-handle"></div>
-      <div class="modal-header">
-        <button type="button" class="modal-header-btn" id="modalCancelBtn">Cancel</button>
-        <span class="modal-title" id="modalTitle">Add Bookmark</span>
-        <button type="button" class="modal-header-btn primary" id="modalSaveBtn">Save</button>
-      </div>
-      <div class="modal-body">
-        <form id="bookmarkForm" autocomplete="off">
-          <!-- URL -->
-          <div class="form-group">
-            <label class="form-label">URL</label>
-            <input type="url" name="url" id="formUrl" placeholder="https://example.com">
-          </div>
-          
-          <!-- Title -->
-          <div class="form-group">
-            <label class="form-label">Title</label>
-            <input type="text" name="title" id="formTitle" placeholder="Page title (auto-detected)">
-          </div>
-          
-          <!-- Platform & Folder -->
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Platform</label>
-              <select name="platform" id="formPlatform">
-                <option value="Article">Article</option>
-                <option value="YouTube">YouTube</option>
-                <option value="Podcast">Podcast</option>
-                <option value="Tweet">Tweet</option>
-                <option value="Custom">Custom</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Folder</label>
-              <input type="text" name="folder" id="formFolder" list="folderDatalist" placeholder="General" value="General">
-              <datalist id="folderDatalist"></datalist>
-            </div>
-          </div>
-          
-          <!-- Tags -->
-          <div class="form-group">
-            <label class="form-label">Tags (comma separated)</label>
-            <input type="text" name="tags" id="formTags" placeholder="tag1, tag2, tag3">
-          </div>
-          
-          <!-- Notes -->
-          <div class="form-group">
-            <label class="form-label">Notes</label>
-            <textarea name="notes" id="formNotes" placeholder="Add your notes..." rows="3"></textarea>
-          </div>
-          
-          <!-- Text Snippet Section -->
-          <div class="form-section">
-            <h3 class="form-section-title">Text Snippet</h3>
-            <div class="form-group">
-              <label class="form-label">Snippet Title</label>
-              <input type="text" name="snippetTitle" id="formSnippetTitle" placeholder="e.g., Summary, Quote">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Snippet Content</label>
-              <textarea name="snippetContent" id="formSnippetContent" placeholder="Paste text content here..." rows="4"></textarea>
-            </div>
-          </div>
-          
-          <!-- Image Section -->
-          <div class="form-section">
-            <h3 class="form-section-title">Reference Image</h3>
-            <div class="form-group">
-              <label class="form-label">Image Title</label>
-              <input type="text" name="imageTitle" id="formImageTitle" placeholder="e.g., Screenshot, Diagram">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Image URL</label>
-              <input type="url" name="imageUrl" id="formImageUrl" placeholder="https://example.com/image.jpg">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Or Upload Image</label>
-              <div class="image-upload-area" id="imageUploadArea">
-                <input type="file" name="imageFile" id="formImageFile" accept="image/*" class="hidden">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                <p>Tap to select image</p>
-              </div>
-              <div id="imagePreviewContainer" class="image-preview hidden">
-                <img src="" alt="Preview" id="imagePreviewImg">
-                <button type="button" class="image-preview-remove" id="removeImageBtn" aria-label="Remove image">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Reminder Section -->
-          <div class="form-section">
-            <h3 class="form-section-title">Reminder</h3>
-            <div class="form-group">
-              <label class="form-label">Remind me on</label>
-              <input type="datetime-local" name="reminder" id="formReminder">
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-  
-  <!-- ==========================================
-       FAB (Floating Action Button)
-  ========================================== -->
-  <button type="button" class="fab" id="fabBtn" aria-label="Add bookmark">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <path d="M12 5v14M5 12h14"/>
-    </svg>
+
+  <button class="fab" id="fabAdd" aria-label="Add bookmark">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
   </button>
-  
-  <!-- ==========================================
-       BOTTOM NAVIGATION
-  ========================================== -->
+
   <nav class="bottom-nav" id="bottomNav">
-    <button type="button" class="nav-item active" data-nav="home" aria-label="Home">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
+    <button data-nav="home" class="active" aria-label="Home">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7"></path><path d="M9 22V12h6v10"></path></svg>
       <span>Home</span>
     </button>
-    <button type="button" class="nav-item" data-nav="search" aria-label="Search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <circle cx="11" cy="11" r="8"/>
-        <path d="M21 21l-4.35-4.35"/>
-      </svg>
+    <button data-nav="search" aria-label="Search">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <span>Search</span>
     </button>
-    <button type="button" class="nav-item" data-nav="clipboard" aria-label="Clipboard">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
-        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-      </svg>
-      <span>Clipboard</span>
+    <button data-nav="clip" aria-label="Clipboard">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+      <span>Clip</span>
     </button>
-    <button type="button" class="nav-item" data-nav="folders" aria-label="Folders">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
-      </svg>
+    <button data-nav="folders" aria-label="Folders">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h5l2 3h11v9H3z"></path></svg>
       <span>Folders</span>
     </button>
   </nav>
-  
-  <!-- ==========================================
-       CLIPBOARD SHEET
-  ========================================== -->
-  <div id="clipboardSheet" class="sheet-overlay">
-    <div class="sheet-container">
-      <div class="sheet-handle"></div>
-      <div class="sheet-title">Clipboard Content</div>
-      <div style="padding: 0 20px 16px;">
-        <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 12px; padding: 16px; max-height: 150px; overflow-y: auto;">
-          <p id="clipboardPreviewText" style="font-size: 14px; line-height: 1.5; word-break: break-word; white-space: pre-wrap; color: var(--text-secondary);"></p>
-        </div>
+
+  <div class="modal" id="addModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="modal"></div>
+    <div class="modal-content">
+      <div class="drag-handle"></div>
+      <div class="modal-header">
+        <button id="cancelModal">Cancel</button>
+        <h3 id="modalTitle">Add Bookmark</h3>
+        <button id="saveBookmarkBtn" style="color:var(--amber); font-weight:600;">Save</button>
       </div>
-      <button type="button" class="sheet-item" data-clipboard-action="bookmark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
-        </svg>
-        Save as Bookmark
-      </button>
-      <button type="button" class="sheet-item" data-clipboard-action="snippet">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-        </svg>
-        Save as Text Snippet
-      </button>
-      <button type="button" class="sheet-item" data-clipboard-action="imageUrl">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-          <circle cx="8.5" cy="8.5" r="1.5"/>
-          <polyline points="21 15 16 10 5 21"/>
-        </svg>
-        Save as Image URL
-      </button>
-      <div class="sheet-divider"></div>
-      <button type="button" class="sheet-item" data-clipboard-action="dismiss">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M15 9l-6 6M9 9l6 6"/>
-        </svg>
-        Dismiss
-      </button>
+      <form id="bookmarkForm">
+        <section>
+          <h4>Basic Information</h4>
+          <label>URL
+            <input type="url" id="urlInput" placeholder="https://" inputmode="url" />
+          </label>
+          <label>Title
+            <input type="text" id="titleInput" placeholder="Title" />
+          </label>
+          <div style="display:flex; gap:12px;">
+            <label style="flex:1;">Platform
+              <select id="platformSelect">
+                <option>YouTube</option>
+                <option>Article</option>
+                <option>Podcast</option>
+                <option>Tweet</option>
+                <option>Custom</option>
+              </select>
+            </label>
+            <label style="flex:1;">Folder
+              <input type="text" id="folderInput" list="folderList" placeholder="General" />
+              <datalist id="folderList"></datalist>
+            </label>
+          </div>
+          <label>Tags (comma separated)
+            <input type="text" id="tagsInput" placeholder="design, ai" />
+          </label>
+          <label>Notes
+            <textarea id="notesInput" placeholder="Notes"></textarea>
+          </label>
+        </section>
+        <hr />
+        <section>
+          <h4>Text Snippet</h4>
+          <label>Snippet Title
+            <input type="text" id="snippetTitleInput" />
+          </label>
+          <label>Snippet Content
+            <textarea id="snippetContentInput"></textarea>
+          </label>
+        </section>
+        <hr />
+        <section>
+          <h4>Image</h4>
+          <label>Image Title
+            <input type="text" id="imageTitleInput" />
+          </label>
+          <label>Image URL
+            <input type="url" id="imageUrlInput" placeholder="https://" />
+          </label>
+          <label>Upload Image
+            <input type="file" id="imageUploadInput" accept="image/*" />
+          </label>
+          <div id="imagePreview" class="hidden">
+            <img src="" alt="Preview" style="width:100%; border-radius:16px; margin-top:8px;" />
+            <button type="button" id="removeImage" style="width:100%; margin-top:8px;">Remove Image</button>
+          </div>
+        </section>
+      </form>
     </div>
   </div>
-  
-  <!-- ==========================================
-       THEME SHEET
-  ========================================== -->
-  <div id="themeSheet" class="sheet-overlay">
-    <div class="sheet-container">
-      <div class="sheet-handle"></div>
-      <div class="sheet-title">Choose Theme</div>
-      <button type="button" class="sheet-item" data-theme-select="sunrise">
-        <span class="theme-dot" style="background: linear-gradient(135deg, #fef3c7 0%, #e0f2fe 100%);"></span>
-        Sunrise
-      </button>
-      <button type="button" class="sheet-item" data-theme-select="midnight">
-        <span class="theme-dot" style="background: linear-gradient(135deg, #1e293b 0%, #0c4a6e 100%);"></span>
-        Midnight
-      </button>
-      <button type="button" class="sheet-item" data-theme-select="neon">
-        <span class="theme-dot" style="background: linear-gradient(135deg, #1a0533 0%, #0d1117 100%);"></span>
-        Neon
-      </button>
-      <button type="button" class="sheet-item" data-theme-select="glass">
-        <span class="theme-dot" style="background: linear-gradient(135deg, #f0f9ff 0%, #fdf4ff 100%);"></span>
-        Glass
-      </button>
-    </div>
-  </div>
-  
-  <!-- ==========================================
-       FOLDER SHEET
-  ========================================== -->
-  <div id="folderSheet" class="sheet-overlay">
-    <div class="sheet-container">
-      <div class="sheet-handle"></div>
-      <div class="sheet-title">Select Folder</div>
-      <div id="folderSheetList"></div>
-    </div>
-  </div>
-  
-  <!-- ==========================================
-       BOOKMARK ACTION SHEET
-  ========================================== -->
-  <div id="bookmarkActionSheet" class="sheet-overlay">
-    <div class="sheet-container">
-      <div class="sheet-handle"></div>
-      <div class="sheet-title" id="actionSheetTitle">Bookmark Options</div>
-      <button type="button" class="sheet-item" data-bookmark-action="edit">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-        Edit
-      </button>
-      <button type="button" class="sheet-item" data-bookmark-action="copy">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-        </svg>
-        Copy Link
-      </button>
-      <button type="button" class="sheet-item" data-bookmark-action="share">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="18" cy="5" r="3"/>
-          <circle cx="6" cy="12" r="3"/>
-          <circle cx="18" cy="19" r="3"/>
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-        </svg>
-        Share
-      </button>
-      <div class="sheet-divider"></div>
-      <button type="button" class="sheet-item danger" data-bookmark-action="delete">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-        </svg>
-        Delete
-      </button>
-    </div>
-  </div>
-  
-  <!-- ==========================================
-       TOAST NOTIFICATION
-  ========================================== -->
-  <div id="toast" class="toast"></div>
 
-  <!-- Part 2 contains JavaScript -->
-    <!-- Add this script section at the end of the body, before </body> -->
+  <div class="sheet" id="clipboardSheet" aria-hidden="true">
+    <div class="sheet-backdrop" data-close="sheet"></div>
+    <div class="sheet-content">
+      <div class="drag-handle"></div>
+      <div class="sheet-header">
+        <h3>Clipboard Content</h3>
+        <button data-close="sheet" aria-label="Close clipboard">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="clipboardPreview" style="padding:12px; background:rgba(15,23,42,0.05); border-radius:16px; min-height:80px;"></div>
+      <div class="sheet-actions" style="margin-top:16px;">
+        <button data-clip="bookmark">Save as Bookmark</button>
+        <button data-clip="snippet">Save as Text Snippet</button>
+        <button data-clip="image">Save as Image URL</button>
+        <button data-close="sheet">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="themeSheet" aria-hidden="true">
+    <div class="sheet-backdrop" data-close="sheet"></div>
+    <div class="sheet-content">
+      <div class="drag-handle"></div>
+      <h3>Choose Theme</h3>
+      <div style="display:flex; gap:12px; margin-top:12px;">
+        <button class="pill" data-theme="light" style="flex:1;">Light</button>
+        <button class="pill" data-theme="dark" style="flex:1;">Dark</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="folderSheet" aria-hidden="true">
+    <div class="sheet-backdrop" data-close="sheet"></div>
+    <div class="sheet-content">
+      <div class="drag-handle"></div>
+      <h3>Select Folder</h3>
+      <div id="folderListSheet" style="display:flex; flex-direction:column; gap:12px; margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <div class="sheet" id="actionSheet" aria-hidden="true">
+    <div class="sheet-backdrop" data-close="sheet"></div>
+    <div class="sheet-content">
+      <div class="drag-handle"></div>
+      <h3 id="actionSheetTitle">Bookmark</h3>
+      <div style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
+        <button data-action="edit">Edit</button>
+        <button data-action="copy">Copy Link</button>
+        <button data-action="share">Share</button>
+        <button data-action="delete" style="color:var(--danger);">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Saved</div>
+
   <script>
-    // ============================================
-    // CONSTANTS
-    // ============================================
-    const STORAGE_KEY = 'maniBookmarkVault';
-    const PLATFORMS = ['All', 'YouTube', 'Article', 'Podcast', 'Tweet', 'Custom'];
-    const THEMES = ['sunrise', 'midnight', 'neon', 'glass'];
-    const ITEMS_PER_PAGE = 20;
-
-    // ============================================
-    // APPLICATION STATE
-    // ============================================
+    const $ = (id) => document.getElementById(id);
     const state = {
       bookmarks: [],
-      theme: 'sunrise',
-      filters: {
-        platform: 'All',
-        folder: 'All',
-        search: ''
-      },
-      currentTab: 'bookmarks',
-      currentView: 'home',
+      theme: 'light',
+      filter: { platform: 'All', folder: 'All', search: '' },
+      tab: 'bookmarks',
       page: 1,
-      editingId: null,
-      clipboardText: '',
-      lastClipboardCheck: '',
-      selectedBookmarkId: null,
-      imageBase64: '',
-      github: {
-        owner: '',
-        repo: '',
-        path: 'data/bookmarks.json',
-        token: '',
-        sha: ''
-      }
+      suggestions: [],
+      editId: null,
+      selectedId: null,
+      clipboardContent: '',
+      imageData: '',
+      github: { owner: '', repo: '', path: '', token: '', sha: '' },
+      deferredPrompt: null
     };
 
-    let deferredInstallPrompt = null;
+    document.addEventListener('DOMContentLoaded', init);
 
-    // ============================================
-    // DOM ELEMENT REFERENCES
-    // ============================================
-    const $ = (id) => document.getElementById(id);
-    const $$ = (selector) => document.querySelectorAll(selector);
-
-    const elements = {
-      // Views
-      homeView: $('homeView'),
-      settingsView: $('settingsView'),
-      
-      // Header
-      settingsBtn: $('settingsBtn'),
-      backBtn: $('backBtn'),
-      searchInput: $('searchInput'),
-      clearSearchBtn: $('clearSearchBtn'),
-      countLabel: $('countLabel'),
-      
-      // Stats
-      statTotal: $('statTotal'),
-      statToday: $('statToday'),
-      statWeek: $('statWeek'),
-      statFolders: $('statFolders'),
-      
-      // Filters
-      platformPills: $('platformPills'),
-      folderPills: $('folderPills'),
-      contentTabs: $('contentTabs'),
-      
-      // Content
-      bookmarkList: $('bookmarkList'),
-      snippetList: $('snippetList'),
-      imageGrid: $('imageGrid'),
-      emptyState: $('emptyState'),
-      loadMoreContainer: $('loadMoreContainer'),
-      loadMoreBtn: $('loadMoreBtn'),
-      
-      // FAB & Nav
-      fabBtn: $('fabBtn'),
-      bottomNav: $('bottomNav'),
-      
-      // Add Modal
-      addModal: $('addModal'),
-      modalTitle: $('modalTitle'),
-      modalCancelBtn: $('modalCancelBtn'),
-      modalSaveBtn: $('modalSaveBtn'),
-      bookmarkForm: $('bookmarkForm'),
-      formUrl: $('formUrl'),
-      formTitle: $('formTitle'),
-      formPlatform: $('formPlatform'),
-      formFolder: $('formFolder'),
-      formTags: $('formTags'),
-      formNotes: $('formNotes'),
-      formSnippetTitle: $('formSnippetTitle'),
-      formSnippetContent: $('formSnippetContent'),
-      formImageTitle: $('formImageTitle'),
-      formImageUrl: $('formImageUrl'),
-      formImageFile: $('formImageFile'),
-      formReminder: $('formReminder'),
-      imageUploadArea: $('imageUploadArea'),
-      imagePreviewContainer: $('imagePreviewContainer'),
-      imagePreviewImg: $('imagePreviewImg'),
-      removeImageBtn: $('removeImageBtn'),
-      folderDatalist: $('folderDatalist'),
-      
-      // Sheets
-      clipboardSheet: $('clipboardSheet'),
-      clipboardPreviewText: $('clipboardPreviewText'),
-      themeSheet: $('themeSheet'),
-      folderSheet: $('folderSheet'),
-      folderSheetList: $('folderSheetList'),
-      bookmarkActionSheet: $('bookmarkActionSheet'),
-      actionSheetTitle: $('actionSheetTitle'),
-      
-      // Settings
-      themeBtn: $('themeBtn'),
-      currentThemeLabel: $('currentThemeLabel'),
-      exportBtn: $('exportBtn'),
-      importFileInput: $('importFileInput'),
-      clearAllBtn: $('clearAllBtn'),
-      installPwaBtn: $('installPwaBtn'),
-      
-      // GitHub
-      githubOwner: $('githubOwner'),
-      githubRepo: $('githubRepo'),
-      githubPath: $('githubPath'),
-      githubToken: $('githubToken'),
-      pullGithubBtn: $('pullGithubBtn'),
-      pushGithubBtn: $('pushGithubBtn'),
-      githubStatus: $('githubStatus'),
-      
-      // Toast
-      toast: $('toast')
-    };
-
-    // ============================================
-    // INITIALIZATION
-    // ============================================
-    document.addEventListener('DOMContentLoaded', initializeApp);
-
-    function initializeApp() {
-      loadStateFromStorage();
+    function init() {
+      loadData();
       applyTheme();
-      bindAllEvents();
-      renderAll();
+      setupEvents();
+      render();
       setupPWA();
-      handleShareTarget();
-      
-      // Check clipboard after a short delay
-      setTimeout(() => checkClipboard(false), 600);
+      checkShareTarget();
     }
 
-    // ============================================
-    // STATE MANAGEMENT
-    // ============================================
-    function loadStateFromStorage() {
+    function loadData() {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved = localStorage.getItem('bookmarkVault');
         if (saved) {
-          const data = JSON.parse(saved);
-          state.bookmarks = Array.isArray(data.bookmarks) ? data.bookmarks : [];
-          state.theme = data.theme || 'sunrise';
-          state.github = { ...state.github, ...(data.github || {}) };
-          
-          // Migrate old bookmarks if needed
-          migrateBookmarks();
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.bookmarks)) state.bookmarks = parsed.bookmarks;
+          if (parsed.theme) state.theme = parsed.theme;
+          if (parsed.github) state.github = { ...state.github, ...parsed.github };
         }
-      } catch (error) {
-        console.error('Failed to load state:', error);
-        state.bookmarks = [];
+      } catch (err) {
+        console.error('loadData', err);
+        toast('Failed to load data');
       }
-      
-      // Populate GitHub form fields
-      elements.githubOwner.value = state.github.owner || '';
-      elements.githubRepo.value = state.github.repo || '';
-      elements.githubPath.value = state.github.path || 'data/bookmarks.json';
-      elements.githubToken.value = state.github.token || '';
+      $('ghOwner').value = state.github.owner || '';
+      $('ghRepo').value = state.github.repo || '';
+      $('ghPath').value = state.github.path || '';
+      $('ghToken').value = state.github.token || '';
     }
 
-    function migrateBookmarks() {
-      let needsSave = false;
-      state.bookmarks.forEach(bookmark => {
-        if (!bookmark.id) {
-          bookmark.id = generateId();
-          needsSave = true;
-        }
-        if (!bookmark.createdAt) {
-          bookmark.createdAt = new Date().toISOString();
-          needsSave = true;
-        }
-        if (!bookmark.folder) {
-          bookmark.folder = 'General';
-          needsSave = true;
-        }
-      });
-      if (needsSave) {
-        saveStateToStorage();
-      }
-    }
-
-    function saveStateToStorage() {
+    function saveData() {
       try {
-        const dataToSave = {
+        localStorage.setItem('bookmarkVault', JSON.stringify({
           bookmarks: state.bookmarks,
           theme: state.theme,
-          github: {
-            owner: state.github.owner,
-            repo: state.github.repo,
-            path: state.github.path,
-            token: state.github.token,
-            sha: state.github.sha
-          }
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-      } catch (error) {
-        console.error('Failed to save state:', error);
-        showToast('Failed to save data');
+          github: state.github
+        }));
+      } catch (err) {
+        console.error('saveData', err);
+        toast('Storage error');
       }
     }
 
-    function generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-    }
-
-    // ============================================
-    // EVENT BINDING - MOBILE OPTIMIZED
-    // ============================================
-    function bindAllEvents() {
-      // Helper function for mobile-friendly click handling
-      function onTap(element, handler, options = {}) {
-        if (!element) return;
-        
-        let touchMoved = false;
-        let touchStartTime = 0;
-        
-        element.addEventListener('touchstart', (e) => {
-          touchMoved = false;
-          touchStartTime = Date.now();
-        }, { passive: true });
-        
-        element.addEventListener('touchmove', () => {
-          touchMoved = true;
-        }, { passive: true });
-        
-        element.addEventListener('touchend', (e) => {
-          if (!touchMoved && Date.now() - touchStartTime < 300) {
-            e.preventDefault();
-            handler(e);
-          }
-        }, { passive: false });
-        
-        element.addEventListener('click', (e) => {
-          // Only handle click if it wasn't a touch event
-          if (e.pointerType !== 'touch') {
-            handler(e);
-          }
-        });
-      }
-
-      // Navigation buttons
-      $$('.nav-item').forEach(btn => {
-        onTap(btn, () => handleNavigation(btn.dataset.nav));
-      });
-
-      // FAB button
-      onTap(elements.fabBtn, openAddModal);
-
-      // Settings navigation
-      onTap(elements.settingsBtn, () => switchView('settings'));
-      onTap(elements.backBtn, () => switchView('home'));
-
-      // Search
-      elements.searchInput.addEventListener('input', handleSearchInput);
-      elements.searchInput.addEventListener('focus', () => {
-        updateNavActiveState('search');
-      });
-      onTap(elements.clearSearchBtn, clearSearch);
-
-      // Content tabs
-      $$('.tab-btn').forEach(btn => {
-        onTap(btn, () => switchTab(btn.dataset.tab));
-      });
-
-      // Modal controls
-      onTap(elements.modalCancelBtn, closeAddModal);
-      onTap(elements.modalSaveBtn, handleSaveBookmark);
-      onTap(elements.addModal, (e) => {
-        if (e.target === elements.addModal) {
-          closeAddModal();
-        }
-      });
-
-      // Image upload
-      onTap(elements.imageUploadArea, () => elements.formImageFile.click());
-      elements.formImageFile.addEventListener('change', handleImageUpload);
-      onTap(elements.removeImageBtn, removeUploadedImage);
-
-      // Settings actions
-      onTap(elements.themeBtn, () => showSheet('theme'));
-      onTap(elements.exportBtn, exportData);
-      elements.importFileInput.addEventListener('change', handleImportData);
-      onTap(elements.clearAllBtn, confirmClearAllData);
-      onTap(elements.installPwaBtn, installPWA);
-
-      // GitHub sync
-      elements.githubOwner.addEventListener('change', (e) => updateGithubConfig('owner', e.target.value));
-      elements.githubRepo.addEventListener('change', (e) => updateGithubConfig('repo', e.target.value));
-      elements.githubPath.addEventListener('change', (e) => updateGithubConfig('path', e.target.value));
-      elements.githubToken.addEventListener('change', (e) => updateGithubConfig('token', e.target.value));
-      onTap(elements.pullGithubBtn, pullFromGitHub);
-      onTap(elements.pushGithubBtn, pushToGitHub);
-
-      // Theme selection
-      $$('[data-theme-select]').forEach(btn => {
-        onTap(btn, () => {
-          setTheme(btn.dataset.themeSelect);
-          hideAllSheets();
+    function setupEvents() {
+      document.querySelectorAll('.bottom-nav button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          handleNav(btn.dataset.nav);
         });
       });
-
-      // Clipboard actions
-      $$('[data-clipboard-action]').forEach(btn => {
-        onTap(btn, () => handleClipboardAction(btn.dataset.clipboardAction));
+      $('fabAdd').addEventListener('click', (e) => { e.preventDefault(); openAddModal(); });
+      $('openSettings').addEventListener('click', () => showView('settings'));
+      $('backHome').addEventListener('click', () => showView('home'));
+      $('searchInput').addEventListener('input', (e) => {
+        state.filter.search = e.target.value.trim();
+        $('clearSearch').classList.toggle('show', state.filter.search.length > 0);
+        state.page = 1;
+        renderContent();
       });
-
-      // Bookmark actions
-      $$('[data-bookmark-action]').forEach(btn => {
-        onTap(btn, () => handleBookmarkAction(btn.dataset.bookmarkAction));
+      $('clearSearch').addEventListener('click', () => {
+        state.filter.search = '';
+        $('searchInput').value = '';
+        $('clearSearch').classList.remove('show');
+        renderContent();
       });
-
-      // Sheet overlays - close on backdrop tap
-      [elements.clipboardSheet, elements.themeSheet, elements.folderSheet, elements.bookmarkActionSheet].forEach(sheet => {
-        if (sheet) {
-          onTap(sheet, (e) => {
-            if (e.target === sheet) {
-              hideAllSheets();
-            }
-          });
-        }
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+      $('cancelModal').addEventListener('click', closeAddModal);
+      $('saveBookmarkBtn').addEventListener('click', saveBookmark);
+      $('urlInput').addEventListener('blur', fetchMetadata);
+      $('imageUploadInput').addEventListener('change', handleImageUpload);
+      $('removeImage').addEventListener('click', () => {
+        state.imageData = '';
+        $('imagePreview').classList.add('hidden');
       });
-
-      // Load more
-      onTap(elements.loadMoreBtn, loadMoreBookmarks);
-
-      // URL input - auto-detect platform
-      elements.formUrl.addEventListener('input', handleUrlInput);
-      elements.formUrl.addEventListener('blur', fetchUrlMetadata);
-
-      // Visibility change - check clipboard
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-          setTimeout(() => checkClipboard(false), 300);
-        }
+      $('openThemeSheet').addEventListener('click', () => openSheet('themeSheet'));
+      document.querySelectorAll('#themeSheet [data-theme]').forEach(btn => btn.addEventListener('click', () => setTheme(btn.dataset.theme)));
+      $('exportBtn').addEventListener('click', exportData);
+      $('importBtn').addEventListener('click', () => $('importInput').click());
+      $('importInput').addEventListener('change', importData);
+      $('clearData').addEventListener('click', clearAllData);
+      $('pullBtn').addEventListener('click', pullGitHub);
+      $('pushBtn').addEventListener('click', pushGitHub);
+      $('installBtn').addEventListener('click', installPWA);
+      $('githubStatus').textContent = 'Disconnected';
+      ['ghOwner','ghRepo','ghPath','ghToken'].forEach(id => {
+        $(id).addEventListener('input', () => {
+          state.github = {
+            ...state.github,
+            owner: $('ghOwner').value.trim(),
+            repo: $('ghRepo').value.trim(),
+            path: $('ghPath').value.trim(),
+            token: $('ghToken').value.trim()
+          };
+          saveData();
+        });
       });
-
-      // Focus - check clipboard
-      window.addEventListener('focus', () => {
-        setTimeout(() => checkClipboard(false), 300);
+      document.querySelectorAll('[data-close="sheet"]').forEach(btn => btn.addEventListener('click', closeAllSheets));
+      document.querySelectorAll('[data-close="modal"]').forEach(btn => btn.addEventListener('click', closeAddModal));
+      document.querySelectorAll('#clipboardSheet [data-clip]').forEach(btn => btn.addEventListener('click', () => handleClipAction(btn.dataset.clip)));
+      $('loadMore').addEventListener('click', () => {
+        state.page += 1;
+        renderBookmarks();
       });
-
-      // PWA install prompt
+      $('bookmarkForm').addEventListener('submit', (e) => { e.preventDefault(); });
+      document.querySelector('[data-nav="clip"]').addEventListener('click', readClipboard);
+      document.querySelector('[data-nav="folders"]').addEventListener('click', showFolderSheet);
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
-        deferredInstallPrompt = e;
-        elements.installPwaBtn.disabled = false;
-        elements.installPwaBtn.style.opacity = '1';
+        state.deferredPrompt = e;
+        $('installBtn').disabled = false;
       });
-
-      // Handle back button on Android
-      window.addEventListener('popstate', handleBackButton);
     }
 
-    // ============================================
-    // NAVIGATION
-    // ============================================
-    function handleNavigation(nav) {
-      updateNavActiveState(nav);
-      
-      switch (nav) {
-        case 'home':
-          switchView('home');
-          resetFilters();
-          break;
-        case 'search':
-          switchView('home');
-          elements.searchInput.focus();
-          break;
-        case 'clipboard':
-          checkClipboard(true);
-          break;
-        case 'folders':
-          showFolderSheet();
-          break;
+    function handleNav(type) {
+      document.querySelectorAll('.bottom-nav button').forEach(btn => btn.classList.toggle('active', btn.dataset.nav === type || (type === 'home' && btn.dataset.nav === 'home')));
+      if (type === 'home') {
+        showView('home');
+      } else if (type === 'search') {
+        showView('home');
+        $('searchInput').focus();
+      } else if (type === 'clip') {
+        readClipboard();
+      } else if (type === 'folders') {
+        showFolderSheet();
       }
     }
 
-    function updateNavActiveState(activeNav) {
-      $$('.nav-item').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.nav === activeNav);
-      });
-    }
-
-    function switchView(view) {
-      state.currentView = view;
-      
-      elements.homeView.classList.toggle('active', view === 'home');
-      elements.settingsView.classList.toggle('active', view === 'settings');
-      
-      // Show/hide FAB and bottom nav
-      const showNav = view === 'home';
-      elements.fabBtn.style.display = showNav ? 'flex' : 'none';
-      elements.bottomNav.style.display = showNav ? 'flex' : 'none';
-      
-      // Handle browser history
+    function showView(view) {
       if (view === 'settings') {
-        history.pushState({ view: 'settings' }, '', '#settings');
+        $('homeView').classList.add('hidden');
+        $('settingsView').classList.add('active');
       } else {
-        if (location.hash === '#settings') {
-          history.back();
-        }
-      }
-    }
-
-    function handleBackButton(e) {
-      if (state.currentView === 'settings') {
-        switchView('home');
+        $('homeView').classList.remove('hidden');
+        $('settingsView').classList.remove('active');
       }
     }
 
     function switchTab(tab) {
-      state.currentTab = tab;
-      state.page = 1;
-      
-      $$('.tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === tab);
-      });
-      
-      elements.bookmarkList.classList.toggle('hidden', tab !== 'bookmarks');
-      elements.snippetList.classList.toggle('hidden', tab !== 'snippets');
-      elements.imageGrid.classList.toggle('hidden', tab !== 'images');
-      
-      renderCurrentTabContent();
+      state.tab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+      $('bookmarksPanel').classList.toggle('hidden', tab !== 'bookmarks');
+      $('snippetsPanel').classList.toggle('hidden', tab !== 'snippets');
+      $('imagesPanel').classList.toggle('hidden', tab !== 'images');
+      renderContent();
     }
 
     function resetFilters() {
-      state.filters = { platform: 'All', folder: 'All', search: '' };
+      state.filter = { platform: 'All', folder: 'All', search: '' };
       state.page = 1;
-      elements.searchInput.value = '';
-      elements.clearSearchBtn.classList.add('hidden');
-      renderAll();
+      $('searchInput').value = '';
+      $('clearSearch').classList.remove('show');
+      render();
     }
 
-    // ============================================
-    // RENDERING
-    // ============================================
-    function renderAll() {
+    function render() {
       renderStats();
-      renderPlatformPills();
-      renderFolderPills();
-      renderCurrentTabContent();
+      renderPlatforms();
+      renderFolders();
+      renderContent();
       updateFolderDatalist();
     }
 
     function renderStats() {
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const weekStart = new Date(todayStart);
-      weekStart.setDate(weekStart.getDate() - 7);
-      
       const total = state.bookmarks.length;
-      const today = state.bookmarks.filter(b => new Date(b.createdAt) >= todayStart).length;
-      const week = state.bookmarks.filter(b => new Date(b.createdAt) >= weekStart).length;
+      const today = state.bookmarks.filter(b => sameDay(new Date(b.createdAt), new Date())).length;
+      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const week = state.bookmarks.filter(b => new Date(b.createdAt).getTime() >= weekAgo).length;
       const folders = new Set(state.bookmarks.map(b => b.folder || 'General')).size;
-      
-      elements.statTotal.textContent = total;
-      elements.statToday.textContent = today;
-      elements.statWeek.textContent = week;
-      elements.statFolders.textContent = folders;
-      elements.countLabel.textContent = `${total} item${total !== 1 ? 's' : ''} saved`;
+      $('statTotal').textContent = total;
+      $('statToday').textContent = today;
+      $('statWeek').textContent = week;
+      $('statFolders').textContent = folders;
+      $('itemCount').textContent = `${total} items`;
     }
 
-    function renderPlatformPills() {
-      const counts = {};
-      PLATFORMS.forEach(p => {
-        if (p === 'All') {
-          counts[p] = state.bookmarks.length;
-        } else {
-          counts[p] = state.bookmarks.filter(b => detectPlatform(b.url) === p || b.platform === p).length;
-        }
-      });
-      
-      elements.platformPills.innerHTML = PLATFORMS.map(platform => `
-        <button type="button" class="pill ${state.filters.platform === platform ? 'active' : ''}" data-platform="${platform}">
-          ${platform}${platform !== 'All' ? ` (${counts[platform]})` : ''}
-        </button>
-      `).join('');
-      
-      // Bind events to new pills
-      elements.platformPills.querySelectorAll('.pill').forEach(pill => {
-        pill.addEventListener('click', () => {
-          state.filters.platform = pill.dataset.platform;
+    function sameDay(a, b) {
+      return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+
+    function renderPlatforms() {
+      const platforms = ['All','YouTube','Article','Podcast','Tweet','Custom'];
+      const row = $('platformRow');
+      row.innerHTML = '';
+      platforms.forEach(p => {
+        const count = p === 'All' ? state.bookmarks.length : state.bookmarks.filter(b => (b.platform || 'Article') === p).length;
+        const btn = document.createElement('button');
+        btn.className = 'pill' + (state.filter.platform === p ? ' active' : '');
+        btn.textContent = `${p} (${count})`;
+        btn.addEventListener('click', () => {
+          state.filter.platform = p;
           state.page = 1;
-          renderPlatformPills();
-          renderCurrentTabContent();
+          renderContent();
+          renderPlatforms();
         });
+        row.appendChild(btn);
       });
     }
 
-    function renderFolderPills() {
-      const folders = ['All', ...new Set(state.bookmarks.map(b => b.folder || 'General'))];
-      
-      elements.folderPills.innerHTML = folders.map(folder => `
-        <button type="button" class="pill ${state.filters.folder === folder ? 'active' : ''}" data-folder="${folder}">
-          ${folder}
-        </button>
-      `).join('');
-      
-      // Bind events to new pills
-      elements.folderPills.querySelectorAll('.pill').forEach(pill => {
-        pill.addEventListener('click', () => {
-          state.filters.folder = pill.dataset.folder;
+    function renderFolders() {
+      const row = $('folderRow');
+      row.innerHTML = '';
+      const folders = ['All', ...Array.from(new Set(state.bookmarks.map(b => b.folder || 'General'))).sort()];
+      folders.forEach(f => {
+        const count = f === 'All' ? state.bookmarks.length : state.bookmarks.filter(b => (b.folder || 'General') === f).length;
+        const btn = document.createElement('button');
+        btn.className = 'pill' + (state.filter.folder === f ? ' active' : '');
+        btn.textContent = `${f} (${count})`;
+        btn.addEventListener('click', () => {
+          state.filter.folder = f;
           state.page = 1;
-          renderFolderPills();
-          renderCurrentTabContent();
+          renderContent();
+          renderFolders();
         });
+        row.appendChild(btn);
       });
     }
 
-    function renderCurrentTabContent() {
-      switch (state.currentTab) {
-        case 'bookmarks':
-          renderBookmarks();
-          break;
-        case 'snippets':
-          renderSnippets();
-          break;
-        case 'images':
-          renderImages();
-          break;
-      }
+    function renderContent() {
+      if (state.tab === 'bookmarks') renderBookmarks();
+      else if (state.tab === 'snippets') renderSnippets();
+      else renderImages();
+      updateSearchSuggestions();
     }
 
-    function getFilteredBookmarks() {
-      return state.bookmarks.filter(bookmark => {
-        // Platform filter
-        if (state.filters.platform !== 'All') {
-          const bookmarkPlatform = bookmark.platform || detectPlatform(bookmark.url);
-          if (bookmarkPlatform !== state.filters.platform) return false;
-        }
-        
-        // Folder filter
-        if (state.filters.folder !== 'All') {
-          if ((bookmark.folder || 'General') !== state.filters.folder) return false;
-        }
-        
-        // Search filter
-        if (state.filters.search) {
-          const searchLower = state.filters.search.toLowerCase();
-          const searchableText = [
-            bookmark.title,
-            bookmark.url,
-            bookmark.notes,
-            bookmark.folder,
-            (bookmark.tags || []).join(' '),
-            bookmark.snippetTitle,
-            bookmark.snippetContent,
-            bookmark.imageTitle
-          ].filter(Boolean).join(' ').toLowerCase();
-          
-          if (!searchableText.includes(searchLower)) return false;
-        }
-        
-        return true;
+    function getFiltered() {
+      const search = state.filter.search.toLowerCase();
+      return state.bookmarks.filter(b => {
+        const platformMatch = state.filter.platform === 'All' || (b.platform || 'Article') === state.filter.platform;
+        const folderMatch = state.filter.folder === 'All' || (b.folder || 'General') === state.filter.folder;
+        const searchTarget = [b.title, b.url, b.notes, (b.tags || []).join(','), b.snippetTitle, b.snippetContent, b.imageTitle].join(' ').toLowerCase();
+        const searchMatch = !search || searchTarget.includes(search);
+        return platformMatch && folderMatch && searchMatch;
       });
     }
 
     function renderBookmarks() {
-      const filtered = getFilteredBookmarks();
-      const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-      const paginatedBookmarks = filtered.slice(0, state.page * ITEMS_PER_PAGE);
-      
-      if (paginatedBookmarks.length === 0) {
-        elements.bookmarkList.innerHTML = '';
-        elements.emptyState.classList.remove('hidden');
-        elements.loadMoreContainer.classList.add('hidden');
-        return;
+      const panel = $('bookmarksPanel');
+      const filtered = getFiltered();
+      const perPage = 20;
+      const end = state.page * perPage;
+      const list = filtered.slice(0, end);
+      panel.innerHTML = '';
+      if (!list.length) {
+        panel.innerHTML = '<p style="text-align:center; color:var(--muted);">No bookmarks yet.</p>';
       }
-      
-      elements.emptyState.classList.add('hidden');
-      
-      elements.bookmarkList.innerHTML = paginatedBookmarks.map((bookmark, index) => {
-        const platform = bookmark.platform || detectPlatform(bookmark.url);
-        const thumbnail = bookmark.thumbnail || bookmark.imageData || getDefaultThumbnail(bookmark.url);
-        const tags = bookmark.tags || [];
-        const displayIndex = index + 1;
-        
-        return `
-          <article class="bookmark-card" data-id="${bookmark.id}">
-            <div class="bookmark-header">
-              <div class="bookmark-thumb">
-                ${thumbnail ? `<img src="${thumbnail}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='No img'">` : 'No img'}
+      list.forEach((b, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="bookmark-card">
+            <div class="bookmark-media">
+              <img class="bookmark-thumb" loading="lazy" src="${b.thumbnail || b.imageData || b.imageUrl || getFavicon(b.url || '')}" alt="Thumbnail" />
+              ${b.platform === 'YouTube' && b.title ? `<div class="thumb-caption">${b.url ? `<a href="${b.url}" target="_blank" rel="noopener">${esc(b.title)}</a>` : esc(b.title)}</div>` : ''}
+            </div>
+            <div>
+              <div class="bookmark-meta">
+                <span class="badge">#${idx + 1}</span>
+                <span>${b.platform || 'Article'}</span>
+                <span>${b.folder || 'General'}</span>
               </div>
-              <div class="bookmark-info">
-                <div class="bookmark-meta">
-                  <span class="bookmark-badge">#${displayIndex}</span>
-                  <span class="bookmark-badge">${platform}</span>
-                  <span class="bookmark-badge">${bookmark.folder || 'General'}</span>
-                </div>
-                <h3 class="bookmark-title">
-                  ${bookmark.url ? `<a href="${escapeHtml(bookmark.url)}" target="_blank" rel="noopener">${escapeHtml(bookmark.title || bookmark.url)}</a>` : escapeHtml(bookmark.title || 'Untitled')}
-                </h3>
-                ${bookmark.url ? `<p class="bookmark-url">${escapeHtml(extractDomain(bookmark.url))}</p>` : ''}
+              <h4 style="margin:4px 0; font-size:16px;">
+                ${b.url ? `<a href="${b.url}" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;">${esc(b.title || 'Untitled')}</a>` : esc(b.title || 'Untitled')}
+              </h4>
+              <div style="font-size:12px; color:var(--muted);">${b.url ? getDomain(b.url) : ''}</div>
+              <div class="tags">${(b.tags || []).map(tag => `<span class="tag">${esc(tag)}</span>`).join('')}</div>
+              <p style="font-size:13px; color:var(--muted);">${esc((b.notes || '').slice(0, 120))}</p>
+              <div class="card-actions">
+                <button data-open="${b.id}">Open</button>
+                <button data-more="${b.id}">More</button>
               </div>
             </div>
-            ${tags.length > 0 ? `
-              <div class="bookmark-tags">
-                ${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
-              </div>
-            ` : ''}
-            ${bookmark.notes ? `<p class="bookmark-notes">${escapeHtml(bookmark.notes)}</p>` : ''}
-            <div class="bookmark-actions">
-              ${bookmark.url ? `
-                <button type="button" class="action-btn" data-action="open" data-id="${bookmark.id}">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-                    <polyline points="15 3 21 3 21 9"/>
-                    <line x1="10" y1="14" x2="21" y2="3"/>
-                  </svg>
-                  Open
-                </button>
-              ` : ''}
-              <button type="button" class="action-btn" data-action="more" data-id="${bookmark.id}">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="1"/>
-                  <circle cx="19" cy="12" r="1"/>
-                  <circle cx="5" cy="12" r="1"/>
-                </svg>
-                More
-              </button>
-            </div>
-          </article>
-        `;
-      }).join('');
-      
-      // Bind events to bookmark actions
-      elements.bookmarkList.querySelectorAll('[data-action]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const action = btn.dataset.action;
-          const id = btn.dataset.id;
-          
-          if (action === 'open') {
-            const bookmark = state.bookmarks.find(b => b.id === id);
-            if (bookmark && bookmark.url) {
-              window.open(bookmark.url, '_blank');
-            }
-          } else if (action === 'more') {
-            showBookmarkActionSheet(id);
-          }
-        });
+          </div>`;
+        panel.appendChild(card);
       });
-      
-      // Show/hide load more button
-      const hasMore = state.page < totalPages;
-      elements.loadMoreContainer.classList.toggle('hidden', !hasMore);
+      $('loadMore').classList.toggle('hidden', filtered.length <= end);
+      panel.querySelectorAll('[data-open]').forEach(btn => btn.addEventListener('click', () => openBookmark(btn.dataset.open)));
+      panel.querySelectorAll('[data-more]').forEach(btn => btn.addEventListener('click', () => showActionSheet(btn.dataset.more)));
     }
 
     function renderSnippets() {
-      const filtered = getFilteredBookmarks().filter(b => b.snippetContent);
-      
-      if (filtered.length === 0) {
-        elements.snippetList.innerHTML = `
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-            </svg>
-            <h3>No snippets yet</h3>
-            <p>Save text snippets when adding bookmarks</p>
-          </div>
-        `;
+      const panel = $('snippetsPanel');
+      const list = getFiltered().filter(b => b.snippetContent);
+      panel.innerHTML = '';
+      if (!list.length) {
+        panel.innerHTML = '<p style="text-align:center; color:var(--muted);">No snippets found.</p>';
         return;
       }
-      
-      elements.snippetList.innerHTML = filtered.map(bookmark => `
-        <article class="snippet-card" data-id="${bookmark.id}">
-          <div class="snippet-header">
-            <h3 class="snippet-title">${escapeHtml(bookmark.snippetTitle || bookmark.title || 'Untitled')}</h3>
-            <span class="snippet-folder">${escapeHtml(bookmark.folder || 'General')}</span>
+      list.forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'card snippet-card';
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between;">
+            <h4>${esc(b.snippetTitle || b.title || 'Snippet')}</h4>
+            <span class="badge">${b.folder || 'General'}</span>
           </div>
-          <p class="snippet-content">${escapeHtml(bookmark.snippetContent)}</p>
-        </article>
-      `).join('');
+          <hr />
+          <pre>${esc(b.snippetContent)}</pre>`;
+        panel.appendChild(card);
+      });
     }
 
     function renderImages() {
-      const filtered = getFilteredBookmarks().filter(b => b.imageData || b.imageUrl);
-      
-      if (filtered.length === 0) {
-        elements.imageGrid.innerHTML = `
-          <div class="empty-state" style="grid-column: 1 / -1;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <h3>No images yet</h3>
-            <p>Save reference images when adding bookmarks</p>
-          </div>
-        `;
+      const panel = $('imagesPanel');
+      const list = getFiltered().filter(b => b.imageData || b.imageUrl);
+      panel.innerHTML = '';
+      if (!list.length) {
+        panel.innerHTML = '<p style="text-align:center; color:var(--muted);">No images yet.</p>';
         return;
       }
-      
-      elements.imageGrid.innerHTML = filtered.map(bookmark => {
-        const imageSrc = bookmark.imageData || bookmark.imageUrl;
-        return `
-          <article class="image-card" data-id="${bookmark.id}">
-            <img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(bookmark.imageTitle || 'Image')}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23e2e8f0%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%2394a3b8%22 font-size=%2212%22>Error</text></svg>'">
-            <div class="image-card-title">${escapeHtml(bookmark.imageTitle || bookmark.title || 'Untitled')}</div>
-          </article>
-        `;
-      }).join('');
+      const grid = document.createElement('div');
+      grid.className = 'images-grid';
+      list.forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'card image-card';
+        card.innerHTML = `
+          <img src="${b.imageData || b.imageUrl}" loading="lazy" alt="${esc(b.imageTitle || b.title || 'Image')}" />
+          <h4>${esc(b.imageTitle || b.title || 'Image')}</h4>`;
+        grid.appendChild(card);
+      });
+      panel.appendChild(grid);
     }
 
     function updateFolderDatalist() {
-      const folders = [...new Set(state.bookmarks.map(b => b.folder || 'General'))];
-      elements.folderDatalist.innerHTML = folders.map(f => `<option value="${escapeHtml(f)}">`).join('');
+      const dataList = $('folderList');
+      dataList.innerHTML = '';
+      Array.from(new Set(state.bookmarks.map(b => b.folder || 'General'))).forEach(folder => {
+        const option = document.createElement('option');
+        option.value = folder;
+        dataList.appendChild(option);
+      });
     }
 
-    function loadMoreBookmarks() {
-      state.page++;
-      renderBookmarks();
+    function updateSearchSuggestions() {
+      const list = $('searchSuggestions');
+      if (!list) return;
+      list.innerHTML = '';
+      const seen = new Set();
+      const add = (value) => {
+        if (!value) return;
+        const val = value.toString().trim();
+        if (!val) return;
+        const key = val.toLowerCase();
+        if (seen.has(key) || seen.size >= 40) return;
+        seen.add(key);
+        const option = document.createElement('option');
+        option.value = val;
+        list.appendChild(option);
+      };
+      state.bookmarks.forEach(b => {
+        add(b.title);
+        add(b.url);
+        add(b.folder);
+        add((b.notes || '').slice(0, 60));
+        add(b.snippetTitle);
+        add((b.snippetContent || '').slice(0, 60));
+        add(b.imageTitle);
+        add((b.imageUrl || '').slice(0, 60));
+        (b.tags || []).forEach(add);
+      });
+      state.suggestions = Array.from(seen);
     }
 
-    // ============================================
-    // SEARCH
-    // ============================================
-    function handleSearchInput(e) {
-      const value = e.target.value.trim();
-      state.filters.search = value;
-      state.page = 1;
-      
-      elements.clearSearchBtn.classList.toggle('hidden', !value);
-      renderCurrentTabContent();
-    }
-
-    function clearSearch() {
-      elements.searchInput.value = '';
-      state.filters.search = '';
-      state.page = 1;
-      elements.clearSearchBtn.classList.add('hidden');
-      renderCurrentTabContent();
-    }
-
-    // ============================================
-    // ADD/EDIT MODAL
-    // ============================================
-    function openAddModal() {
-      state.editingId = null;
-      state.imageBase64 = '';
-      
-      elements.modalTitle.textContent = 'Add Bookmark';
-      elements.bookmarkForm.reset();
-      elements.formFolder.value = 'General';
-      elements.imagePreviewContainer.classList.add('hidden');
-      
-      showModal(elements.addModal);
-    }
-
-    function openEditModal(id) {
+    function openBookmark(id) {
       const bookmark = state.bookmarks.find(b => b.id === id);
-      if (!bookmark) return;
-      
-      state.editingId = id;
-      state.imageBase64 = bookmark.imageData || '';
-      
-      elements.modalTitle.textContent = 'Edit Bookmark';
-      
-      elements.formUrl.value = bookmark.url || '';
-      elements.formTitle.value = bookmark.title || '';
-      elements.formPlatform.value = bookmark.platform || 'Article';
-      elements.formFolder.value = bookmark.folder || 'General';
-      elements.formTags.value = (bookmark.tags || []).join(', ');
-      elements.formNotes.value = bookmark.notes || '';
-      elements.formSnippetTitle.value = bookmark.snippetTitle || '';
-      elements.formSnippetContent.value = bookmark.snippetContent || '';
-      elements.formImageTitle.value = bookmark.imageTitle || '';
-      elements.formImageUrl.value = bookmark.imageUrl || '';
-      elements.formReminder.value = bookmark.reminder || '';
-      
-      if (bookmark.imageData) {
-        elements.imagePreviewImg.src = bookmark.imageData;
-        elements.imagePreviewContainer.classList.remove('hidden');
+      if (bookmark && bookmark.url) {
+        window.open(bookmark.url, '_blank');
       } else {
-        elements.imagePreviewContainer.classList.add('hidden');
+        toast('No URL');
       }
-      
-      showModal(elements.addModal);
+    }
+
+    function openAddModal() {
+      state.editId = null;
+      $('modalTitle').textContent = 'Add Bookmark';
+      $('bookmarkForm').reset();
+      state.imageData = '';
+      $('imagePreview').classList.add('hidden');
+      openModal('addModal');
+    }
+
+    function editBookmark(id) {
+      const b = state.bookmarks.find(item => item.id === id);
+      if (!b) return;
+      state.editId = id;
+      $('modalTitle').textContent = 'Edit Bookmark';
+      $('urlInput').value = b.url || '';
+      $('titleInput').value = b.title || '';
+      $('platformSelect').value = b.platform || 'Article';
+      $('folderInput').value = b.folder || '';
+      $('tagsInput').value = (b.tags || []).join(', ');
+      $('notesInput').value = b.notes || '';
+      $('snippetTitleInput').value = b.snippetTitle || '';
+      $('snippetContentInput').value = b.snippetContent || '';
+      $('imageTitleInput').value = b.imageTitle || '';
+      $('imageUrlInput').value = b.imageUrl || '';
+      state.imageData = b.imageData || '';
+      if (state.imageData) {
+        $('imagePreview').classList.remove('hidden');
+        $('imagePreview').querySelector('img').src = state.imageData;
+      } else {
+        $('imagePreview').classList.add('hidden');
+      }
+      openModal('addModal');
     }
 
     function closeAddModal() {
-      hideModal(elements.addModal);
-      state.editingId = null;
-      state.imageBase64 = '';
+      closeModal('addModal');
+      state.editId = null;
+      state.imageData = '';
     }
 
-    function handleSaveBookmark() {
-      const formData = {
-        url: elements.formUrl.value.trim(),
-        title: elements.formTitle.value.trim(),
-        platform: elements.formPlatform.value,
-        folder: elements.formFolder.value.trim() || 'General',
-        tags: elements.formTags.value.split(',').map(t => t.trim()).filter(Boolean),
-        notes: elements.formNotes.value.trim(),
-        snippetTitle: elements.formSnippetTitle.value.trim(),
-        snippetContent: elements.formSnippetContent.value.trim(),
-        imageTitle: elements.formImageTitle.value.trim(),
-        imageUrl: elements.formImageUrl.value.trim(),
-        imageData: state.imageBase64,
-        reminder: elements.formReminder.value
-      };
-      
-      // Validate - must have at least URL, snippet, or image
-      if (!formData.url && !formData.snippetContent && !formData.imageData && !formData.imageUrl) {
-        showToast('Please add a URL, text snippet, or image');
+    function openModal(id) {
+      $(id).classList.add('open');
+      document.body.classList.add('locked');
+    }
+
+    function closeModal(id) {
+      $(id).classList.remove('open');
+      document.body.classList.remove('locked');
+    }
+
+    function saveBookmark() {
+      const url = $('urlInput').value.trim();
+      const title = $('titleInput').value.trim();
+      const platform = $('platformSelect').value || detectPlatform(url);
+      const folder = $('folderInput').value.trim() || 'General';
+      const tags = $('tagsInput').value.split(',').map(t => t.trim()).filter(Boolean);
+      const notes = $('notesInput').value.trim();
+      const snippetTitle = $('snippetTitleInput').value.trim();
+      const snippetContent = $('snippetContentInput').value.trim();
+      const imageTitle = $('imageTitleInput').value.trim();
+      const imageUrl = $('imageUrlInput').value.trim();
+      const hasContent = url || snippetContent || imageUrl || state.imageData;
+      if (!hasContent) {
+        toast('Add at least one content type');
         return;
       }
-      
-      // Auto-detect platform from URL
-      if (formData.url && !formData.platform) {
-        formData.platform = detectPlatform(formData.url);
-      }
-      
-      // Set default title if empty
-      if (!formData.title) {
-        if (formData.url) {
-          formData.title = formData.url;
-        } else if (formData.snippetTitle) {
-          formData.title = formData.snippetTitle;
-        } else if (formData.imageTitle) {
-          formData.title = formData.imageTitle;
-        } else {
-          formData.title = 'Untitled';
-        }
-      }
-      
-      if (state.editingId) {
-        // Update existing bookmark
-        const index = state.bookmarks.findIndex(b => b.id === state.editingId);
-        if (index !== -1) {
-          state.bookmarks[index] = {
-            ...state.bookmarks[index],
-            ...formData,
-            updatedAt: new Date().toISOString()
+      const now = new Date().toISOString();
+      if (state.editId) {
+        const idx = state.bookmarks.findIndex(b => b.id === state.editId);
+        if (idx > -1) {
+          state.bookmarks[idx] = {
+            ...state.bookmarks[idx],
+            url,
+            title: title || state.bookmarks[idx].title || 'Untitled',
+            platform,
+            folder,
+            tags,
+            notes,
+            snippetTitle,
+            snippetContent,
+            imageTitle,
+            imageUrl,
+            imageData: state.imageData,
+            updatedAt: now
           };
-          showToast('Bookmark updated');
         }
+        toast('Bookmark updated');
       } else {
-        // Create new bookmark
-        const newBookmark = {
-          id: generateId(),
-          ...formData,
-          createdAt: new Date().toISOString()
-        };
-        state.bookmarks.unshift(newBookmark);
-        showToast('Bookmark saved');
-      }
-      
-      saveStateToStorage();
-      closeAddModal();
-      renderAll();
-    }
-
-    function handleUrlInput(e) {
-      const url = e.target.value.trim();
-      if (url) {
-        const platform = detectPlatform(url);
-        elements.formPlatform.value = platform;
-      }
-    }
-
-    async function fetchUrlMetadata() {
-      const url = elements.formUrl.value.trim();
-      if (!url || elements.formTitle.value.trim()) return;
-      
-      // Try to fetch title for YouTube videos
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        try {
-          const response = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.title && !elements.formTitle.value) {
-              elements.formTitle.value = data.title;
-            }
-          }
-        } catch (error) {
-          console.log('Could not fetch metadata');
-        }
-      }
-    }
-
-    // ============================================
-    // IMAGE HANDLING
-    // ============================================
-    function handleImageUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      if (!file.type.startsWith('image/')) {
-        showToast('Please select an image file');
-        return;
-      }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        showToast('Image must be less than 5MB');
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        state.imageBase64 = event.target.result;
-        elements.imagePreviewImg.src = state.imageBase64;
-        elements.imagePreviewContainer.classList.remove('hidden');
-      };
-      reader.onerror = () => {
-        showToast('Failed to read image');
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function removeUploadedImage() {
-      state.imageBase64 = '';
-      elements.formImageFile.value = '';
-      elements.imagePreviewContainer.classList.add('hidden');
-    }
-
-    // ============================================
-    // CLIPBOARD HANDLING
-    // ============================================
-    async function checkClipboard(showSheet = false) {
-      if (!navigator.clipboard || !navigator.clipboard.readText) {
-        if (showSheet) {
-          showToast('Clipboard access not available');
-        }
-        return;
-      }
-      
-      try {
-        const text = await navigator.clipboard.readText();
-        
-        if (!text || text.trim() === '') {
-          if (showSheet) {
-            showToast('Clipboard is empty');
-          }
-          return;
-        }
-        
-        // Check if this is new content
-        if (text === state.lastClipboardCheck && !showSheet) {
-          return;
-        }
-        
-        state.clipboardText = text.trim();
-        state.lastClipboardCheck = text;
-        
-        if (showSheet || isUrl(text)) {
-          elements.clipboardPreviewText.textContent = state.clipboardText;
-          showSheet('clipboard');
-        }
-      } catch (error) {
-        if (showSheet) {
-          showToast('Clipboard access denied');
-        }
-        console.log('Clipboard read failed:', error);
-      }
-    }
-
-    function handleClipboardAction(action) {
-      hideAllSheets();
-      
-      if (action === 'dismiss' || !state.clipboardText) {
-        return;
-      }
-      
-      openAddModal();
-      
-      switch (action) {
-        case 'bookmark':
-          if (isUrl(state.clipboardText)) {
-            elements.formUrl.value = state.clipboardText;
-            elements.formPlatform.value = detectPlatform(state.clipboardText);
-          } else {
-            elements.formNotes.value = state.clipboardText;
-          }
-          break;
-          
-        case 'snippet':
-          elements.formSnippetContent.value = state.clipboardText;
-          elements.formSnippetTitle.value = `Snippet - ${new Date().toLocaleString()}`;
-          break;
-          
-        case 'imageUrl':
-          if (isUrl(state.clipboardText)) {
-            elements.formImageUrl.value = state.clipboardText;
-            elements.formImageTitle.value = 'Image from clipboard';
-          } else {
-            showToast('Clipboard does not contain a URL');
-          }
-          break;
-      }
-      
-      showToast('Clipboard content added');
-    }
-
-    // ============================================
-    // BOOKMARK ACTIONS
-    // ============================================
-    function showBookmarkActionSheet(id) {
-      const bookmark = state.bookmarks.find(b => b.id === id);
-      if (!bookmark) return;
-      
-      state.selectedBookmarkId = id;
-      elements.actionSheetTitle.textContent = bookmark.title || 'Bookmark Options';
-      showSheet('bookmarkAction');
-    }
-
-    function handleBookmarkAction(action) {
-      const id = state.selectedBookmarkId;
-      if (!id) return;
-      
-      const bookmark = state.bookmarks.find(b => b.id === id);
-      if (!bookmark) return;
-      
-      hideAllSheets();
-      
-      switch (action) {
-        case 'edit':
-          openEditModal(id);
-          break;
-          
-        case 'copy':
-          if (bookmark.url) {
-            copyToClipboard(bookmark.url);
-            showToast('Link copied');
-          } else {
-            showToast('No URL to copy');
-          }
-          break;
-          
-        case 'share':
-          shareBookmark(bookmark);
-          break;
-          
-        case 'delete':
-          confirmDeleteBookmark(id);
-          break;
-      }
-      
-      state.selectedBookmarkId = null;
-    }
-
-    function confirmDeleteBookmark(id) {
-      if (confirm('Delete this bookmark? This cannot be undone.')) {
-        state.bookmarks = state.bookmarks.filter(b => b.id !== id);
-        saveStateToStorage();
-        renderAll();
-        showToast('Bookmark deleted');
-      }
-    }
-
-    async function shareBookmark(bookmark) {
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: bookmark.title,
-            text: bookmark.notes || bookmark.title,
-            url: bookmark.url
-          });
-        } catch (error) {
-          if (error.name !== 'AbortError') {
-            copyToClipboard(bookmark.url);
-            showToast('Link copied');
-          }
-        }
-      } else {
-        copyToClipboard(bookmark.url);
-        showToast('Link copied');
-      }
-    }
-
-    // ============================================
-    // FOLDER SHEET
-    // ============================================
-    function showFolderSheet() {
-      const folders = ['All', ...new Set(state.bookmarks.map(b => b.folder || 'General'))];
-      
-      elements.folderSheetList.innerHTML = folders.map(folder => {
-        const count = folder === 'All' 
-          ? state.bookmarks.length 
-          : state.bookmarks.filter(b => (b.folder || 'General') === folder).length;
-        
-        return `
-          <button type="button" class="sheet-item" data-folder-select="${folder}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
-            </svg>
-            ${escapeHtml(folder)} (${count})
-          </button>
-        `;
-      }).join('');
-      
-      // Bind events
-      elements.folderSheetList.querySelectorAll('[data-folder-select]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state.filters.folder = btn.dataset.folderSelect;
-          state.page = 1;
-          hideAllSheets();
-          renderFolderPills();
-          renderCurrentTabContent();
+        state.bookmarks.unshift({
+          id: uid(),
+          url,
+          title: title || (url ? getDomain(url) : snippetTitle || imageTitle || 'Untitled'),
+          platform: platform || detectPlatform(url),
+          folder,
+          tags,
+          notes,
+          snippetTitle,
+          snippetContent,
+          imageTitle,
+          imageUrl,
+          imageData: state.imageData,
+          thumbnail: url && detectPlatform(url) === 'YouTube' ? `https://img.youtube.com/vi/${extractYouTubeId(url)}/hqdefault.jpg` : '',
+          createdAt: now,
+          updatedAt: now
         });
+        toast('Bookmark saved');
+      }
+      saveData();
+      render();
+      closeAddModal();
+    }
+
+    function openSheet(id) {
+      $(id).classList.add('open');
+      document.body.classList.add('locked');
+    }
+
+    function closeAllSheets() {
+      document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+      document.body.classList.remove('locked');
+    }
+
+    function showActionSheet(id) {
+      const b = state.bookmarks.find(x => x.id === id);
+      if (!b) return;
+      state.selectedId = id;
+      $('actionSheetTitle').textContent = b.title || 'Bookmark';
+      openSheet('actionSheet');
+      document.querySelectorAll('#actionSheet [data-action]').forEach(btn => btn.onclick = () => {
+        const action = btn.dataset.action;
+        if (action === 'edit') editBookmark(id);
+        if (action === 'copy') copyLink(id);
+        if (action === 'share') shareBookmark(id);
+        if (action === 'delete') deleteBookmark(id);
+        closeAllSheets();
       });
-      
-      showSheet('folder');
     }
 
-    // ============================================
-    // THEME MANAGEMENT
-    // ============================================
-    function applyTheme() {
-      // Remove all theme classes
-      THEMES.forEach(t => document.body.classList.remove(`theme-${t}`));
-      
-      // Apply current theme (sunrise is default, no class needed)
-      if (state.theme !== 'sunrise') {
-        document.body.classList.add(`theme-${state.theme}`);
-      }
-      
-      // Update theme label
-      elements.currentThemeLabel.textContent = capitalizeFirst(state.theme);
-      
-      // Update theme color meta tag
-      const themeColors = {
-        sunrise: '#f59e0b',
-        midnight: '#1e293b',
-        neon: '#a855f7',
-        glass: '#3b82f6'
-      };
-      document.querySelector('meta[name="theme-color"]').content = themeColors[state.theme];
-    }
-
-    function setTheme(theme) {
-      if (THEMES.includes(theme)) {
-        state.theme = theme;
-        saveStateToStorage();
-        applyTheme();
-        showToast(`Theme: ${capitalizeFirst(theme)}`);
-      }
-    }
-
-    // ============================================
-    // DATA MANAGEMENT
-    // ============================================
-    function exportData() {
-      const data = {
-        bookmarks: state.bookmarks,
-        exportedAt: new Date().toISOString(),
-        version: '2.0'
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `bookmarks-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      showToast('Data exported');
-    }
-
-    function handleImportData(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const data = JSON.parse(event.target.result);
-          const bookmarks = data.bookmarks || data;
-          
-          if (!Array.isArray(bookmarks)) {
-            throw new Error('Invalid format');
-          }
-          
-          // Merge or replace
-          const action = confirm('Replace all existing bookmarks?\n\nOK = Replace all\nCancel = Merge with existing');
-          
-          if (action) {
-            state.bookmarks = bookmarks;
-          } else {
-            // Merge, avoiding duplicates by ID
-            const existingIds = new Set(state.bookmarks.map(b => b.id));
-            const newBookmarks = bookmarks.filter(b => !existingIds.has(b.id));
-            state.bookmarks = [...newBookmarks, ...state.bookmarks];
-          }
-          
-          migrateBookmarks();
-          saveStateToStorage();
-          renderAll();
-          showToast(`Imported ${bookmarks.length} bookmarks`);
-        } catch (error) {
-          console.error('Import error:', error);
-          showToast('Failed to import: Invalid file');
-        }
-      };
-      reader.readAsText(file);
-      
-      // Reset input
-      e.target.value = '';
-    }
-
-    function confirmClearAllData() {
-      if (confirm('Delete ALL bookmarks? This cannot be undone!')) {
-        if (confirm('Are you absolutely sure? All data will be lost.')) {
-          state.bookmarks = [];
-          saveStateToStorage();
-          renderAll();
-          showToast('All data cleared');
-        }
-      }
-    }
-
-    // ============================================
-    // GITHUB SYNC
-    // ============================================
-    function updateGithubConfig(key, value) {
-      state.github[key] = value;
-      saveStateToStorage();
-    }
-
-    async function pullFromGitHub() {
-      const { owner, repo, path, token } = state.github;
-      
-      if (!owner || !repo || !path) {
-        showToast('Please fill in GitHub details');
-        return;
-      }
-      
-      elements.githubStatus.textContent = 'Pulling...';
-      
-      try {
-        const headers = {};
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        const response = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
-          { headers }
-        );
-        
-        if (!response.ok) {
-          throw new Error(`GitHub API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        const content = atob(data.content.replace(/\n/g, ''));
-        const parsed = JSON.parse(content);
-        
-        state.bookmarks = parsed.bookmarks || parsed;
-        state.github.sha = data.sha;
-        
-        migrateBookmarks();
-        saveStateToStorage();
-        renderAll();
-        
-        elements.githubStatus.textContent = `Pulled: ${new Date().toLocaleTimeString()}`;
-        showToast('Data pulled from GitHub');
-      } catch (error) {
-        console.error('GitHub pull error:', error);
-        elements.githubStatus.textContent = 'Pull failed';
-        showToast('Failed to pull from GitHub');
-      }
-    }
-
-    async function pushToGitHub() {
-      const { owner, repo, path, token, sha } = state.github;
-      
-      if (!owner || !repo || !path || !token) {
-        showToast('Please fill in all GitHub details including token');
-        return;
-      }
-      
-      elements.githubStatus.textContent = 'Pushing...';
-      
-      try {
-        const content = JSON.stringify({
-          bookmarks: state.bookmarks,
-          updatedAt: new Date().toISOString()
-        }, null, 2);
-        
-        const payload = {
-          message: `Update bookmarks - ${new Date().toISOString()}`,
-          content: btoa(unescape(encodeURIComponent(content)))
-        };
-        
-        if (sha) {
-          payload.sha = sha;
-        }
-        
-        const response = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          }
-        );
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || `GitHub API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        state.github.sha = data.content.sha;
-        saveStateToStorage();
-        
-        elements.githubStatus.textContent = `Pushed: ${new Date().toLocaleTimeString()}`;
-        showToast('Data pushed to GitHub');
-      } catch (error) {
-        console.error('GitHub push error:', error);
-        elements.githubStatus.textContent = 'Push failed';
-        showToast('Failed to push to GitHub');
-      }
-    }
-
-    // ============================================
-    // PWA & SHARE TARGET
-    // ============================================
-    function setupPWA() {
-      // Register service worker
-      if ('serviceWorker' in navigator) {
-        const swCode = `
-          self.addEventListener('install', e => self.skipWaiting());
-          self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-          self.addEventListener('fetch', e => {});
-        `;
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
-      }
-      
-      // Create manifest
-      const manifest = {
-        name: "Mani's Bookmark Vault",
-        short_name: "Bookmarks",
-        description: "Mobile-first bookmark manager",
-        start_url: location.href.split('?')[0],
-        display: "standalone",
-        background_color: "#ffffff",
-        theme_color: "#f59e0b",
-        icons: [
-          {
-            src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f172a'/><path d='M25 20h50v60L50 60 25 80Z' fill='%23f59e0b'/></svg>",
-            sizes: "any",
-            type: "image/svg+xml",
-            purpose: "any maskable"
-          }
-        ],
-        share_target: {
-          action: location.href.split('?')[0],
-          method: "GET",
-          params: {
-            title: "title",
-            text: "text",
-            url: "url"
-          }
-        }
-      };
-      
-      const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-      const manifestUrl = URL.createObjectURL(manifestBlob);
-      
-      let link = document.querySelector('link[rel="manifest"]');
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'manifest';
-        document.head.appendChild(link);
-      }
-      link.href = manifestUrl;
-    }
-
-    function handleShareTarget() {
-      const params = new URLSearchParams(location.search);
-      const sharedUrl = params.get('url');
-      const sharedText = params.get('text');
-      const sharedTitle = params.get('title');
-      
-      if (sharedUrl || sharedText || sharedTitle) {
-        // Clean URL
-        history.replaceState({}, '', location.pathname);
-        
-        // Open modal with shared content
-        setTimeout(() => {
-          openAddModal();
-          
-          if (sharedUrl) {
-            elements.formUrl.value = sharedUrl;
-            elements.formPlatform.value = detectPlatform(sharedUrl);
-          }
-          if (sharedTitle) {
-            elements.formTitle.value = sharedTitle;
-          }
-          if (sharedText && !sharedUrl) {
-            if (isUrl(sharedText)) {
-              elements.formUrl.value = sharedText;
-            } else {
-              elements.formNotes.value = sharedText;
-            }
-          }
-          
-          showToast('Content shared to vault');
-        }, 300);
-      }
-    }
-
-    async function installPWA() {
-      if (deferredInstallPrompt) {
-        deferredInstallPrompt.prompt();
-        const { outcome } = await deferredInstallPrompt.userChoice;
-        if (outcome === 'accepted') {
-          showToast('App installed!');
-        }
-        deferredInstallPrompt = null;
-        elements.installPwaBtn.disabled = true;
-        elements.installPwaBtn.style.opacity = '0.5';
-      } else {
-        showToast('Use browser menu to install');
-      }
-    }
-
-    // ============================================
-    // MODAL & SHEET HELPERS
-    // ============================================
-    function showModal(modal) {
-      modal.classList.add('show');
-      document.body.classList.add('no-scroll');
-    }
-
-    function hideModal(modal) {
-      modal.classList.remove('show');
-      document.body.classList.remove('no-scroll');
-    }
-
-    function showSheet(type) {
-      const sheets = {
-        clipboard: elements.clipboardSheet,
-        theme: elements.themeSheet,
-        folder: elements.folderSheet,
-        bookmarkAction: elements.bookmarkActionSheet
-      };
-      
-      if (sheets[type]) {
-        sheets[type].classList.add('show');
-        document.body.classList.add('no-scroll');
-      }
-    }
-
-    function hideAllSheets() {
-      [elements.clipboardSheet, elements.themeSheet, elements.folderSheet, elements.bookmarkActionSheet].forEach(sheet => {
-        if (sheet) sheet.classList.remove('show');
+    function showFolderSheet() {
+      const container = $('folderListSheet');
+      container.innerHTML = '';
+      const folders = ['All', ...Array.from(new Set(state.bookmarks.map(b => b.folder || 'General'))).sort()];
+      folders.forEach(folder => {
+        const count = folder === 'All' ? state.bookmarks.length : state.bookmarks.filter(b => (b.folder || 'General') === folder).length;
+        const btn = document.createElement('button');
+        btn.style.textAlign = 'left';
+        btn.textContent = `${folder} (${count})`;
+        btn.addEventListener('click', () => {
+          state.filter.folder = folder;
+          renderContent();
+          closeAllSheets();
+        });
+        container.appendChild(btn);
       });
-      document.body.classList.remove('no-scroll');
+      openSheet('folderSheet');
     }
 
-    // ============================================
-    // TOAST NOTIFICATIONS
-    // ============================================
-    let toastTimeout = null;
-
-    function showToast(message, duration = 2500) {
-      if (toastTimeout) {
-        clearTimeout(toastTimeout);
-      }
-      
-      elements.toast.textContent = message;
-      elements.toast.classList.add('show');
-      
-      // Haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-      
-      toastTimeout = setTimeout(() => {
-        elements.toast.classList.remove('show');
-      }, duration);
-    }
-
-    // ============================================
-    // UTILITY FUNCTIONS
-    // ============================================
-    function escapeHtml(text) {
-      if (!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    function isUrl(string) {
-      if (!string) return false;
+    async function fetchMetadata() {
+      const url = $('urlInput').value.trim();
+      if (!url || $('titleInput').value.trim()) return;
       try {
-        const url = new URL(string);
-        return url.protocol === 'http:' || url.protocol === 'https:';
-      } catch {
-        return /^https?:\/\//i.test(string);
+        if (detectPlatform(url) === 'YouTube') {
+          await fetchYouTubeData(url);
+        } else {
+          const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+          if (res.ok) {
+            const data = await res.json();
+            $('titleInput').value = data.title || $('titleInput').value;
+          }
+        }
+      } catch (err) {
+        console.warn('Metadata fetch failed');
       }
     }
 
-    function extractDomain(url) {
+    async function fetchYouTubeData(url) {
+      const id = extractYouTubeId(url);
+      if (!id) return;
       try {
-        return new URL(url).hostname.replace('www.', '');
-      } catch {
+        const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+        if (res.ok) {
+          const data = await res.json();
+          $('titleInput').value = data.title || $('titleInput').value;
+          state.imageData = data.thumbnail_url || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+        } else {
+          state.imageData = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+        }
+        $('imagePreview').classList.remove('hidden');
+        $('imagePreview').querySelector('img').src = state.imageData;
+      } catch (err) {
+        console.warn('YT fetch error');
+      }
+    }
+
+    function extractYouTubeId(url) {
+      try {
+        const u = new URL(url);
+        if (u.hostname.includes('youtu.be')) return u.pathname.slice(1);
+        if (u.searchParams.get('v')) return u.searchParams.get('v');
+        if (u.pathname.includes('/embed/')) return u.pathname.split('/embed/')[1];
+        if (u.pathname.includes('/shorts/')) return u.pathname.split('/shorts/')[1];
+      } catch (err) {
+        return null;
+      }
+      return null;
+    }
+
+    function detectPlatform(url = '') {
+      if (!url) return 'Custom';
+      const u = url.toLowerCase();
+      if (u.includes('youtube.com') || u.includes('youtu.be')) return 'YouTube';
+      if (u.includes('twitter.com') || u.includes('x.com')) return 'Tweet';
+      if (u.includes('spotify.com') || u.includes('podcast') || u.includes('anchor.fm')) return 'Podcast';
+      if (u.includes('medium.com') || u.includes('dev.to') || u.includes('blog')) return 'Article';
+      return 'Article';
+    }
+
+    function isUrl(str) {
+      return /^https?:\/\//i.test(str);
+    }
+
+    function getDomain(url) {
+      try {
+        const { hostname } = new URL(url);
+        return hostname.replace('www.', '');
+      } catch (err) {
         return url;
       }
     }
 
-    function detectPlatform(url) {
-      if (!url) return 'Custom';
-      const urlLower = url.toLowerCase();
-      
-      if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) return 'YouTube';
-      if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) return 'Tweet';
-      if (urlLower.includes('spotify.com') || urlLower.includes('podcast') || urlLower.includes('anchor.fm')) return 'Podcast';
-      if (urlLower.includes('medium.com') || urlLower.includes('dev.to') || urlLower.includes('blog') || urlLower.includes('article')) return 'Article';
-      
-      return 'Article';
+    function getFavicon(url) {
+      if (!url) return 'https://www.google.com/s2/favicons?domain=example.com&sz=128';
+      return `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=128`;
     }
 
-    function getDefaultThumbnail(url) {
-      if (!url) return '';
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    function esc(str = '') {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        toast('Invalid image');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast('Image too large');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.imageData = reader.result;
+        $('imagePreview').classList.remove('hidden');
+        $('imagePreview').querySelector('img').src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function readClipboard() {
       try {
-        const domain = new URL(url).hostname;
-        return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-      } catch {
-        return '';
-      }
-    }
-
-    function capitalizeFirst(str) {
-      return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-
-    function copyToClipboard(text) {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).catch(() => {
-          fallbackCopyToClipboard(text);
-        });
-      } else {
-        fallbackCopyToClipboard(text);
-      }
-    }
-
-    function fallbackCopyToClipboard(text) {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand('copy');
-      } catch (err) {
-        console.error('Fallback copy failed:', err);
-      }
-      document.body.removeChild(textarea);
-    }
-
-    // ============================================
-    // REMINDERS CHECK (Basic implementation)
-    // ============================================
-    function checkReminders() {
-      const now = new Date();
-      state.bookmarks.forEach(bookmark => {
-        if (bookmark.reminder && !bookmark.reminderShown) {
-          const reminderDate = new Date(bookmark.reminder);
-          if (reminderDate <= now) {
-            showToast(`Reminder: ${bookmark.title || 'Bookmark'}`);
-            bookmark.reminderShown = true;
-          }
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          state.clipboardContent = text;
+          $('clipboardPreview').textContent = text;
+          openSheet('clipboardSheet');
+        } else {
+          showPastePrompt();
         }
-      });
-      saveStateToStorage();
+      } catch (err) {
+        showPastePrompt();
+      }
     }
 
-    // Check reminders periodically
-    setInterval(checkReminders, 60000);
+    function showPastePrompt() {
+      const overlay = document.createElement('textarea');
+      overlay.style.position = 'fixed';
+      overlay.style.inset = '20px';
+      overlay.style.zIndex = '999';
+      overlay.style.padding = '20px';
+      overlay.placeholder = 'Paste here...';
+      document.body.appendChild(overlay);
+      overlay.focus();
+      const timer = setTimeout(() => document.body.removeChild(overlay), 10000);
+      overlay.addEventListener('input', () => {
+        clearTimeout(timer);
+        state.clipboardContent = overlay.value;
+        $('clipboardPreview').textContent = overlay.value;
+        document.body.removeChild(overlay);
+        openSheet('clipboardSheet');
+      });
+    }
 
-    // ============================================
-    // EXPOSE FOR DEBUGGING (optional)
-    // ============================================
-    window.bookmarkVault = {
-      state,
-      renderAll,
-      exportData,
-      showToast
-    };
+    function handleClipAction(action) {
+      closeAllSheets();
+      openAddModal();
+      const text = state.clipboardContent;
+      if (action === 'bookmark') {
+        if (isUrl(text.trim())) {
+          $('urlInput').value = text.trim();
+          $('titleInput').value = '';
+        } else {
+          $('notesInput').value = text;
+        }
+      }
+      if (action === 'snippet') {
+        $('snippetContentInput').value = text;
+        $('snippetTitleInput').value = 'Clipboard';
+      }
+      if (action === 'image') {
+        $('imageUrlInput').value = text.trim();
+      }
+      toast('Clipboard captured');
+    }
+
+    function copyLink(id) {
+      const b = state.bookmarks.find(item => item.id === id);
+      if (!b || !b.url) {
+        toast('No URL to copy');
+        return;
+      }
+      copyText(b.url);
+      toast('Link copied');
+    }
+
+    async function shareBookmark(id) {
+      const b = state.bookmarks.find(item => item.id === id);
+      if (!b) return;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: b.title, text: b.notes, url: b.url });
+        } catch (err) {
+          console.warn('Share cancelled');
+        }
+      } else {
+        copyLink(id);
+      }
+    }
+
+    function deleteBookmark(id) {
+      if (!confirm('Delete bookmark?')) return;
+      if (!confirm('This cannot be undone. Delete?')) return;
+      state.bookmarks = state.bookmarks.filter(b => b.id !== id);
+      saveData();
+      render();
+      toast('Bookmark deleted');
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+    }
+
+    function applyTheme() {
+      document.body.classList.toggle('dark', state.theme === 'dark');
+      $('themeLabel').textContent = state.theme === 'dark' ? 'Dark' : 'Light';
+      $('themeColorMeta').setAttribute('content', state.theme === 'dark' ? '#0f172a' : '#f59e0b');
+    }
+
+    function setTheme(theme) {
+      state.theme = theme;
+      applyTheme();
+      saveData();
+      toast(`Theme set to ${theme}`);
+      closeAllSheets();
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify({ bookmarks: state.bookmarks }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bookmark-vault.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('Data exported');
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!Array.isArray(data.bookmarks)) throw new Error('Invalid file');
+          const replace = confirm('Replace existing data? OK = replace, Cancel = merge');
+          if (replace) {
+            state.bookmarks = data.bookmarks;
+          } else {
+            const map = new Map(state.bookmarks.map(b => [b.id, b]));
+            data.bookmarks.forEach(b => map.set(b.id || uid(), { ...b, id: b.id || uid() }));
+            state.bookmarks = Array.from(map.values());
+          }
+          saveData();
+          render();
+          toast('Import complete');
+        } catch (err) {
+          toast('Import failed');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function clearAllData() {
+      if (!confirm('Clear all data?')) return;
+      if (!confirm('This cannot be undone. Continue?')) return;
+      state.bookmarks = [];
+      saveData();
+      render();
+      toast('Data cleared');
+    }
+
+    async function pullGitHub() {
+      const { owner, repo, path, token } = state.github;
+      if (!owner || !repo || !path) {
+        toast('Missing GitHub info');
+        return;
+      }
+      $('githubStatus').textContent = 'Pulling...';
+      try {
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (!res.ok) throw new Error('GitHub error');
+        const data = await res.json();
+        state.github.sha = data.sha;
+        const decoded = atob(data.content.replace(/\n/g, ''));
+        const json = JSON.parse(decoded);
+        if (Array.isArray(json.bookmarks)) {
+          state.bookmarks = json.bookmarks;
+          saveData();
+          render();
+          $('githubStatus').textContent = 'Pulled at ' + new Date().toLocaleTimeString();
+          toast('GitHub pull complete');
+        }
+      } catch (err) {
+        $('githubStatus').textContent = 'Pull failed';
+        toast('GitHub pull failed');
+      }
+    }
+
+    async function pushGitHub() {
+      const { owner, repo, path, token, sha } = state.github;
+      if (!owner || !repo || !path || !token) {
+        toast('Missing GitHub info');
+        return;
+      }
+      $('githubStatus').textContent = 'Pushing...';
+      try {
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify({ bookmarks: state.bookmarks }, null, 2))));
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: 'Update bookmarks',
+            content,
+            sha: sha || undefined
+          })
+        });
+        if (!res.ok) throw new Error('GitHub error');
+        const data = await res.json();
+        state.github.sha = data.content.sha;
+        saveData();
+        $('githubStatus').textContent = 'Pushed at ' + new Date().toLocaleTimeString();
+        toast('GitHub push complete');
+      } catch (err) {
+        $('githubStatus').textContent = 'Push failed';
+        toast('GitHub push failed');
+      }
+    }
+
+    function toast(message, duration = 2500) {
+      const el = $('toast');
+      el.textContent = message;
+      el.classList.add('show');
+      if (navigator.vibrate) navigator.vibrate(10);
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.remove('show'), duration);
+    }
+
+    function setupPWA() {
+      if ('serviceWorker' in navigator) {
+        const swCode = `self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',()=>{});`;
+        const blob = new Blob([swCode], { type: 'text/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl);
+      }
+      const manifest = {
+        name: "Mani's Bookmark Vault",
+        short_name: 'Bookmarks',
+        description: 'Mobile-first bookmark manager',
+        start_url: location.origin + location.pathname,
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#ffffff',
+        theme_color: '#f59e0b',
+        icons: [{
+          src: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23f59e0b'/><path d='M64 26l28 18v58l-28-18-28 18V44z' fill='white'/></svg>`,
+          sizes: 'any',
+          type: 'image/svg+xml',
+          purpose: 'any maskable'
+        }],
+        share_target: {
+          action: location.href,
+          method: 'GET',
+          params: { title: 'title', text: 'text', url: 'url' }
+        }
+      };
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      const manifestURL = URL.createObjectURL(blob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = manifestURL;
+      document.head.appendChild(link);
+    }
+
+    function checkShareTarget() {
+      const params = new URLSearchParams(location.search);
+      const url = params.get('url');
+      const text = params.get('text');
+      const title = params.get('title');
+      if (url || text) {
+        openAddModal();
+        if (url) $('urlInput').value = url;
+        if (title) $('titleInput').value = title;
+        if (text) $('notesInput').value = text;
+        toast('Shared content ready');
+        history.replaceState({}, document.title, location.pathname);
+      }
+    }
+
+    async function installPWA() {
+      if (!state.deferredPrompt) return;
+      state.deferredPrompt.prompt();
+      const choice = await state.deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        toast('Installing...');
+      }
+      state.deferredPrompt = null;
+      $('installBtn').disabled = true;
+    }
   </script>
 </body>
 </html>
